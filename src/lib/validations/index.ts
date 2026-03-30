@@ -226,6 +226,7 @@ export const createOrderSchema = z.object({
   billingAddress: addressSchema.optional(),
   paymentMethod: z.enum(["cod", "sslcommerz", "bkash"]),
   notes: z.string().max(500).optional(),
+  items: z.array(z.any()).optional(), // Add optional items from frontend
 });
 
 export const updateOrderStatusSchema = z.object({

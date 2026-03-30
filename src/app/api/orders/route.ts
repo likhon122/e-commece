@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { shippingAddress, billingAddress, paymentMethod, notes } =
+    const { shippingAddress, billingAddress, paymentMethod, notes, items: directItems } =
       validationResult.data;
 
     // Get user's cart
@@ -107,7 +107,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!cart || cart.items.length === 0) {
+    let cartItems = cart?.items || [];
+    if (cartItems.length === 0 && directItems && directItems.length > 0) {
+      // Use direct items from frontend payload
+      cartItems = directItems;
+    }
+
+    if (cartItems.length === 0) {
       return NextResponse.json(
         { success: false, error: "Cart is empty" },
         { status: 400 },
@@ -117,7 +123,7 @@ export async function POST(request: NextRequest) {
     let orderItems;
     let subtotal;
     try {
-      const orderBuildResult = await validateAndBuildOrderItemsFromCart(cart.items);
+      const orderBuildResult = await validateAndBuildOrderItemsFromCart(cartItems);
       orderItems = orderBuildResult.orderItems;
       subtotal = orderBuildResult.subtotal;
     } catch (stockError) {
@@ -175,8 +181,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Clear cart
-    await Cart.findByIdAndDelete(cart._id);
+    // Clear cart if it exists in DB
+    if (cart && cart._id) {
+      await Cart.findByIdAndDelete(cart._id);
+    }
 
     // Get user for email
     const user = await User.findById(authUser.userId);
