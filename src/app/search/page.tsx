@@ -1,3 +1,4 @@
+
 import { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Search as SearchIcon } from "lucide-react";
