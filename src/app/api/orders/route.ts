@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import connectDB from "@/lib/db/connection";
-import { Order, Cart, User } from "@/lib/db/models";
+import { Order, Cart, User, CheckoutSession } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { createOrderSchema } from "@/lib/validations";
 import { sendOrderConfirmationEmail } from "@/lib/email";
@@ -140,6 +140,45 @@ export async function POST(request: NextRequest) {
     }
 
     const { shippingCost, tax, discount, total } = calculateOrderTotals(subtotal);
+
+    if (paymentMethod === "sslcommerz") {
+      const cookieStore = await cookies();
+      const cartSessionId = cookieStore.get("cartSessionId")?.value;
+
+      const checkoutSession = await CheckoutSession.create({
+        user: authUser.userId,
+        cartSessionId,
+        paymentMethod: "sslcommerz",
+        shippingAddress,
+        billingAddress: billingAddress || shippingAddress,
+        notes,
+        items: orderItems.map((item) => ({
+          product: item.product,
+          variant: item.variant,
+          quantity: item.quantity,
+        })),
+        subtotal,
+        shippingCost,
+        tax,
+        discount,
+        total,
+        status: "pending",
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Checkout session created successfully",
+        data: {
+          checkoutSession: {
+            _id: checkoutSession._id,
+            total: checkoutSession.total,
+            paymentMethod: checkoutSession.paymentMethod,
+            status: checkoutSession.status,
+          },
+        },
+      });
+    }
 
     // Create order
     const order = await Order.create({

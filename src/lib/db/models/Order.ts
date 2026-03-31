@@ -11,6 +11,7 @@ export type OrderStatus =
   | "refunded";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type PaymentMethod = "cod" | "sslcommerz" | "bkash";
+export type StockReservationStatus = "reserved" | "confirmed" | "released";
 
 export interface IOrderAddressDoc {
   name: string;
@@ -63,6 +64,7 @@ export interface IOrderDoc extends Document {
     cardBrand?: string;
     validationId?: string;
   };
+  stockReservationStatus: StockReservationStatus;
   status: OrderStatus;
   trackingNumber?: string;
   notes?: string;
@@ -191,6 +193,11 @@ const OrderSchema = new Schema<IOrderDoc>(
       cardBrand: String,
       validationId: String,
     },
+    stockReservationStatus: {
+      type: String,
+      enum: ["reserved", "confirmed", "released"],
+      default: "reserved",
+    },
     status: {
       type: String,
       enum: [
@@ -238,6 +245,7 @@ OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ user: 1, createdAt: -1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ paymentStatus: 1 });
+OrderSchema.index({ stockReservationStatus: 1 });
 OrderSchema.index({ createdAt: -1 });
 
 const Order: Model<IOrderDoc> =

@@ -164,18 +164,30 @@ export default function CheckoutPage() {
         return;
       }
 
-      const createdOrder = orderJson.data?.order;
-      const orderId = createdOrder?._id;
-      const orderNumber = createdOrder?.orderNumber;
+      if (paymentMethod === "cod") {
+        const createdOrder = orderJson.data?.order;
+        const orderNumber = createdOrder?.orderNumber;
+        if (!orderNumber) {
+          setError("Order was created but missing order details.");
+          return;
+        }
 
-      if (!orderId || !orderNumber) {
-        setError("Order was created but missing order details.");
+        clearCart();
+        router.push(`/account/orders?placed=${orderNumber}`);
         return;
       }
 
-      if (paymentMethod === "cod") {
-        clearCart();
-        router.push(`/account/orders?placed=${orderNumber}`);
+      const createdOrder = orderJson.data?.order;
+      const orderId = createdOrder?._id;
+      const checkoutSessionId = orderJson.data?.checkoutSession?._id;
+
+      if (paymentMethod === "sslcommerz" && !checkoutSessionId) {
+        setError("Checkout session was not created. Please try again.");
+        return;
+      }
+
+      if (paymentMethod === "bkash" && !orderId) {
+        setError("Order was created but missing order details.");
         return;
       }
 
@@ -187,7 +199,11 @@ export default function CheckoutPage() {
       const paymentResponse = await fetch(paymentEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify(
+          paymentMethod === "sslcommerz"
+            ? { checkoutSessionId }
+            : { orderId },
+        ),
       });
 
       const paymentJson = await readJsonSafely(paymentResponse);
@@ -215,7 +231,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      clearCart();
       window.location.href = redirectUrl;
     } catch (placeOrderError) {
       console.error("Place order error:", placeOrderError);

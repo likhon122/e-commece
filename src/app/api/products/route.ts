@@ -33,16 +33,72 @@ export async function GET(request: NextRequest) {
     const query: Record<string, unknown> = { isActive: true };
     const andConditions: Record<string, unknown>[] = [];
 
+    const allCategories = await Category.find({ isActive: true })
+      .select("_id parent slug")
+      .lean();
+
+    const childrenByParent = new Map<string, string[]>();
+    for (const item of allCategories) {
+      const parentId = item.parent ? String(item.parent) : "";
+      if (!parentId) {
+        continue;
+      }
+
+      const current = childrenByParent.get(parentId) || [];
+      current.push(String(item._id));
+      childrenByParent.set(parentId, current);
+    }
+
+    const collectDescendants = (rootId: string): string[] => {
+      const queue = [rootId];
+      const seen = new Set<string>();
+      const result: string[] = [];
+
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (!current || seen.has(current)) {
+          continue;
+        }
+
+        seen.add(current);
+        result.push(current);
+
+        const children = childrenByParent.get(current) || [];
+        for (const child of children) {
+          if (!seen.has(child)) {
+            queue.push(child);
+          }
+        }
+      }
+
+      return result;
+    };
+
     // Category filtering - single or multiple
     if (category) {
       const categoryDoc = await Category.findOne({ slug: category });
       if (categoryDoc) {
-        query.category = categoryDoc._id;
+        const categoryTreeIds = collectDescendants(String(categoryDoc._id));
+        andConditions.push({
+          $or: [
+            { category: { $in: categoryTreeIds } },
+            { subcategory: { $in: categoryTreeIds } },
+          ],
+        });
       }
     } else if (categories.length > 0) {
       const categoryDocs = await Category.find({ slug: { $in: categories } });
       if (categoryDocs.length > 0) {
-        query.category = { $in: categoryDocs.map((c) => c._id) };
+        const categoryTreeIds = categoryDocs
+          .map((entry) => collectDescendants(String(entry._id)))
+          .flat();
+
+        andConditions.push({
+          $or: [
+            { category: { $in: categoryTreeIds } },
+            { subcategory: { $in: categoryTreeIds } },
+          ],
+        });
       }
     }
 
@@ -50,7 +106,13 @@ export async function GET(request: NextRequest) {
     if (subcategory) {
       const subcategoryDoc = await Category.findOne({ slug: subcategory });
       if (subcategoryDoc) {
-        query.subcategory = subcategoryDoc._id;
+        const subcategoryTreeIds = collectDescendants(String(subcategoryDoc._id));
+        andConditions.push({
+          $or: [
+            { subcategory: { $in: subcategoryTreeIds } },
+            { category: { $in: subcategoryTreeIds } },
+          ],
+        });
       }
     }
 
@@ -115,7 +177,32 @@ export async function GET(request: NextRequest) {
 
     // In-stock filter
     if (inStock === "true") {
-      query["variants.stock"] = { $gt: 0 };
+      andConditions.push({
+        $expr: {
+          $gt: [
+            {
+              $size: {
+                $filter: {
+                  input: "$variants",
+                  as: "v",
+                  cond: {
+                    $gt: [
+                      {
+                        $subtract: [
+                          "$$v.stock",
+                          { $ifNull: ["$$v.reservedStock", 0] },
+                        ],
+                      },
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+            0,
+          ],
+        },
+      });
     }
 
     // Brand filtering (single or multiple)

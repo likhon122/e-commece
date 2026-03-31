@@ -20,6 +20,11 @@ interface SSLCommerzInitData {
   cus_city: string;
   cus_postcode: string;
   cus_country: string;
+  ship_name: string;
+  ship_add1: string;
+  ship_city: string;
+  ship_postcode: string;
+  ship_country: string;
   shipping_method: string;
   num_of_item: number;
   product_name: string;
@@ -32,11 +37,15 @@ interface SSLCommerzInitResponse {
   faession?: string;
   GatewayPageURL?: string;
   sessionkey?: string;
+  gatewayPageURL?: string;
   redirectGatewayURL?: string;
   directPaymentURLBank?: string;
   directPaymentURLCard?: string;
   directPaymentURL?: string;
   desc?: string[];
+  failedreason?: string;
+  failedReason?: string;
+  error?: string;
 }
 
 export const initSSLCommerz = async (

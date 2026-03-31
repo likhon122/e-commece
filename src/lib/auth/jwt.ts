@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key",
@@ -114,7 +115,31 @@ export async function getAuthFromRequest(
   // Fallback to cookies
   const accessToken = request.cookies.get("accessToken")?.value;
   if (accessToken) {
-    return verifyAccessToken(accessToken);
+    const verified = await verifyAccessToken(accessToken);
+    if (verified) {
+      return verified;
+    }
+  }
+
+  // Fallback to NextAuth JWT session token
+  try {
+    const nextAuthToken = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+
+    if (nextAuthToken?.id && nextAuthToken.email) {
+      return {
+        userId: String(nextAuthToken.id),
+        email: String(nextAuthToken.email),
+        role:
+          nextAuthToken.role === "admin"
+            ? "admin"
+            : "user",
+      };
+    }
+  } catch {
+    // Ignore NextAuth parse errors and return null below.
   }
 
   return null;

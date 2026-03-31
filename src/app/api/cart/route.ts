@@ -5,6 +5,7 @@ import { getAuthFromRequest } from "@/lib/auth";
 import { addToCartSchema } from "@/lib/validations";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
+import { getAvailableStock } from "@/lib/orders/inventory";
 
 // Helper to get or create session ID for guest users
 async function getSessionId(): Promise<string> {
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check stock
-    if (productVariant.stock < quantity) {
+    if (getAvailableStock(productVariant) < quantity) {
       return NextResponse.json(
         { success: false, error: "Insufficient stock" },
         { status: 400 },
@@ -137,7 +138,10 @@ export async function POST(request: NextRequest) {
         cart.items[existingItemIndex].quantity += quantity;
 
         // Check stock again
-        if (cart.items[existingItemIndex].quantity > productVariant.stock) {
+        if (
+          cart.items[existingItemIndex].quantity >
+          getAvailableStock(productVariant)
+        ) {
           return NextResponse.json(
             { success: false, error: "Insufficient stock" },
             { status: 400 },

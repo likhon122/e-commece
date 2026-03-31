@@ -19,6 +19,7 @@ export interface IProductVariantDoc {
   color: string;
   colorCode: string;
   stock: number;
+  reservedStock?: number;
   price?: number;
   images?: string[];
 }
@@ -94,6 +95,7 @@ const ProductVariantSchema = new Schema<IProductVariantDoc>(
     color: { type: String, required: true },
     colorCode: { type: String, required: true },
     stock: { type: Number, required: true, min: 0, default: 0 },
+    reservedStock: { type: Number, min: 0, default: 0 },
     price: { type: Number },
     images: [{ type: String }],
   },
