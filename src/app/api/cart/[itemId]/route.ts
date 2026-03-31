@@ -4,6 +4,7 @@ import { Cart, Product } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { updateCartItemSchema } from "@/lib/validations";
 import { cookies } from "next/headers";
+import { getAvailableStock } from "@/lib/orders/inventory";
 
 async function getSessionId(): Promise<string | undefined> {
   const cookieStore = await cookies();
@@ -73,7 +74,7 @@ export async function PUT(
       (v) => v.sku === cart.items[itemIndex].variant.sku,
     );
 
-    if (!variant || variant.stock < quantity) {
+    if (!variant || getAvailableStock(variant) < quantity) {
       return NextResponse.json(
         { success: false, error: "Insufficient stock" },
         { status: 400 },

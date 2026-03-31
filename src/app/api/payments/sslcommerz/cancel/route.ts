@@ -1,14 +1,81 @@
 import { NextRequest, NextResponse } from "next/server";
+import connectDB from "@/lib/db/connection";
+import { CheckoutSession, Order } from "@/lib/db/models";
+import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
+import { releaseReservedOrderStock } from "@/lib/orders/inventory";
+import {
+  checkRateLimit,
+  rateLimitExceededResponse,
+} from "@/lib/security/rate-limit";
 
-export async function POST(request: NextRequest) {
-  const formData = await request.formData();
-  const data = Object.fromEntries(formData.entries());
+async function handleCancel(request: NextRequest) {
+  const rateLimit = checkRateLimit(request, "payment:sslcommerz:cancel", {
+    maxRequests: 60,
+    windowMs: 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return rateLimitExceededResponse(rateLimit.retryAfterSec);
+  }
+
+  const data =
+    request.method === "GET"
+      ? Object.fromEntries(request.nextUrl.searchParams.entries())
+      : Object.fromEntries((await request.formData()).entries());
+  const payload = data as Record<string, unknown>;
   const tran_id = data.tran_id as string;
 
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+
+  const hasSignatureFields =
+    typeof payload.verify_sign === "string" &&
+    typeof payload.verify_key === "string";
+  if (hasSignatureFields && !verifySSLCommerzCallbackSignature(payload)) {
+    return NextResponse.redirect(
+      new URL(`/account/orders?payment=invalid-signature`, baseUrl),
+    );
+  }
+
+  if (tran_id) {
+    try {
+      await connectDB();
+      const order = await Order.findOne({
+        orderNumber: tran_id,
+        paymentMethod: "sslcommerz",
+      });
+
+      if (order && order.paymentStatus === "pending") {
+        order.paymentStatus = "failed";
+        order.statusHistory.push({
+          status: order.status,
+          note: "SSLCommerz payment cancelled by user",
+          updatedAt: new Date(),
+        });
+        await order.save();
+        await releaseReservedOrderStock(order._id.toString());
+      }
+
+      const checkoutSession = await CheckoutSession.findOne({
+        gatewayTransactionId: tran_id,
+        paymentMethod: "sslcommerz",
+      });
+      if (checkoutSession && checkoutSession.status === "pending") {
+        checkoutSession.status = "cancelled";
+        await checkoutSession.save();
+      }
+    } catch (error) {
+      console.error("SSLCommerz cancel callback error:", error);
+    }
+  }
+
   return NextResponse.redirect(
-    new URL(
-      `/checkout/cancelled?order=${tran_id}`,
-      process.env.NEXT_PUBLIC_APP_URL,
-    ),
+    new URL(`/account/orders?payment=cancelled&order=${tran_id || "unknown"}`, baseUrl),
   );
+}
+
+export async function POST(request: NextRequest) {
+  return handleCancel(request);
+}
+
+export async function GET(request: NextRequest) {
+  return handleCancel(request);
 }

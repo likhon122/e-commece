@@ -14,5 +14,10 @@ export {
   type OrderStatus,
   type PaymentStatus,
   type PaymentMethod,
+  type StockReservationStatus,
 } from "./Order";
 export { default as Cart, type ICartDoc, type ICartItemDoc } from "./Cart";
+export {
+  default as CheckoutSession,
+  type ICheckoutSessionDoc,
+} from "./CheckoutSession";

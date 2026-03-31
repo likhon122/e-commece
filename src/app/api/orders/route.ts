@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import connectDB from "@/lib/db/connection";
-import { Order, Cart, Product, User } from "@/lib/db/models";
+import { Order, Cart, User, CheckoutSession } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { createOrderSchema } from "@/lib/validations";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import {
+  calculateOrderTotals,
+  confirmReservedOrderStock,
+  reserveOrderStock,
+  validateAndBuildOrderItemsFromCart,
+} from "@/lib/orders/inventory";
 
 export async function GET(request: NextRequest) {
   try {
@@ -60,7 +67,11 @@ export async function POST(request: NextRequest) {
 
     if (!authUser) {
       return NextResponse.json(
-        { success: false, error: "Authentication required" },
+        {
+          success: false,
+          error:
+            "Authentication required: please log in again. If you used Google or NextAuth login, refresh session and retry checkout.",
+        },
         { status: 401 },
       );
     }
@@ -81,82 +92,93 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { shippingAddress, billingAddress, paymentMethod, notes } =
+    const { shippingAddress, billingAddress, paymentMethod, notes, items: directItems } =
       validationResult.data;
 
     // Get user's cart
-    const cart = await Cart.findOne({ user: authUser.userId }).populate(
-      "items.product",
-    );
+    let cart = await Cart.findOne({ user: authUser.userId }).populate("items.product");
 
+    // Fallback to session ID if cart is empty or not found for user
     if (!cart || cart.items.length === 0) {
+      const cookieStore = await cookies();
+      const sessionId = cookieStore.get("cartSessionId")?.value;
+      if (sessionId) {
+        cart = await Cart.findOne({ sessionId }).populate("items.product");
+      }
+    }
+
+    let cartItems = cart?.items || [];
+    if (cartItems.length === 0 && directItems && directItems.length > 0) {
+      // Use direct items from frontend payload
+      cartItems = directItems;
+    }
+
+    if (cartItems.length === 0) {
       return NextResponse.json(
         { success: false, error: "Cart is empty" },
         { status: 400 },
       );
     }
 
-    // Validate stock and prepare order items
-    const orderItems = [];
-    let subtotal = 0;
-
-    for (const item of cart.items) {
-      const product = await Product.findById(item.product._id || item.product);
-      if (!product || !product.isActive) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Product not found: ${item.product.name || "Unknown"}`,
-          },
-          { status: 400 },
-        );
-      }
-
-      const variant = product.variants.find((v) => v.sku === item.variant.sku);
-      if (!variant) {
-        return NextResponse.json(
-          { success: false, error: `Variant not found for ${product.name}` },
-          { status: 400 },
-        );
-      }
-
-      if (variant.stock < item.quantity) {
-        return NextResponse.json(
-          { success: false, error: `Insufficient stock for ${product.name}` },
-          { status: 400 },
-        );
-      }
-
-      const price = variant.price || product.salePrice || product.basePrice;
-      const itemTotal = price * item.quantity;
-      subtotal += itemTotal;
-
-      orderItems.push({
-        product: product._id,
-        productName: product.name,
-        productImage: product.images[0]?.url || "",
-        variant: {
-          sku: variant.sku,
-          size: variant.size,
-          color: variant.color,
-          colorCode: variant.colorCode,
+    let orderItems;
+    let subtotal;
+    try {
+      const orderBuildResult = await validateAndBuildOrderItemsFromCart(cartItems);
+      orderItems = orderBuildResult.orderItems;
+      subtotal = orderBuildResult.subtotal;
+    } catch (stockError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            stockError instanceof Error
+              ? stockError.message
+              : "Unable to validate stock",
         },
-        quantity: item.quantity,
-        price,
-        total: itemTotal,
-      });
-
-      // Decrease stock
-      variant.stock -= item.quantity;
-      product.soldCount += item.quantity;
-      await product.save();
+        { status: 400 },
+      );
     }
 
-    // Calculate totals
-    const shippingCost = subtotal >= 5000 ? 0 : 100; // Free shipping over 5000 BDT
-    const tax = 0; // No tax calculation for now
-    const discount = 0;
-    const total = subtotal + shippingCost + tax - discount;
+    const { shippingCost, tax, discount, total } = calculateOrderTotals(subtotal);
+
+    if (paymentMethod === "sslcommerz") {
+      const cookieStore = await cookies();
+      const cartSessionId = cookieStore.get("cartSessionId")?.value;
+
+      const checkoutSession = await CheckoutSession.create({
+        user: authUser.userId,
+        cartSessionId,
+        paymentMethod: "sslcommerz",
+        shippingAddress,
+        billingAddress: billingAddress || shippingAddress,
+        notes,
+        items: orderItems.map((item) => ({
+          product: item.product,
+          variant: item.variant,
+          quantity: item.quantity,
+        })),
+        subtotal,
+        shippingCost,
+        tax,
+        discount,
+        total,
+        status: "pending",
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: "Checkout session created successfully",
+        data: {
+          checkoutSession: {
+            _id: checkoutSession._id,
+            total: checkoutSession.total,
+            paymentMethod: checkoutSession.paymentMethod,
+            status: checkoutSession.status,
+          },
+        },
+      });
+    }
 
     // Create order
     const order = await Order.create({
@@ -170,14 +192,38 @@ export async function POST(request: NextRequest) {
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
       paymentMethod,
-      paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
+      paymentStatus: "pending",
+      stockReservationStatus: "reserved",
       status: "pending",
       notes,
       statusHistory: [{ status: "pending", updatedAt: new Date() }],
     });
 
-    // Clear cart
-    await Cart.findByIdAndDelete(cart._id);
+    try {
+      await reserveOrderStock(order._id.toString());
+
+      // COD has no payment callback; confirm reservation immediately after reserve.
+      if (paymentMethod === "cod") {
+        await confirmReservedOrderStock(order._id.toString());
+      }
+    } catch (reservationError) {
+      await Order.findByIdAndDelete(order._id);
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            reservationError instanceof Error
+              ? reservationError.message
+              : "Unable to reserve stock",
+        },
+        { status: 409 },
+      );
+    }
+
+    // Clear cart if it exists in DB
+    if (cart && cart._id) {
+      await Cart.findByIdAndDelete(cart._id);
+    }
 
     // Get user for email
     const user = await User.findById(authUser.userId);

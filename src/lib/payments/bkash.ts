@@ -57,6 +57,7 @@ export interface BkashCreatePaymentData {
   amount: string;
   payerReference: string;
   callbackURL: string;
+  merchantInvoiceNumber: string;
   merchantAssociationInfo?: string;
 }
 
@@ -93,7 +94,7 @@ export const createBkashPayment = async (
         amount: data.amount,
         currency: "BDT",
         intent: "sale",
-        merchantInvoiceNumber: `INV-${Date.now()}`,
+        merchantInvoiceNumber: data.merchantInvoiceNumber,
       },
       {
         headers: {

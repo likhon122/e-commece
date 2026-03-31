@@ -3,14 +3,30 @@ import connectDB from "@/lib/db/connection";
 import { Order } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { createBkashPayment } from "@/lib/payments/bkash";
+import {
+  checkRateLimit,
+  rateLimitExceededResponse,
+} from "@/lib/security/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    const rateLimit = checkRateLimit(request, "payment:bkash:create", {
+      maxRequests: 20,
+      windowMs: 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return rateLimitExceededResponse(rateLimit.retryAfterSec);
+    }
+
     const user = await getAuthFromRequest(request);
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: "Authentication required" },
+        {
+          success: false,
+          error:
+            "Authentication required: session missing or expired. Please sign in and retry payment.",
+        },
         { status: 401 },
       );
     }
@@ -34,12 +50,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
 
     const response = await createBkashPayment({
       amount: order.total.toString(),
       payerReference: order.orderNumber,
-      callbackURL: `${baseUrl}/api/payments/bkash/callback?orderId=${order._id}`,
+      callbackURL: `${baseUrl}/api/payments/bkash/callback`,
+      merchantInvoiceNumber: order.orderNumber,
     });
 
     if (!response || response.statusCode !== "0000") {
@@ -56,6 +73,7 @@ export async function POST(request: NextRequest) {
     order.paymentDetails = {
       ...order.paymentDetails,
       transactionId: response.paymentID,
+      validationId: response.merchantInvoiceNumber,
     };
     await order.save();
 
