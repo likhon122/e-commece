@@ -1,4 +1,3 @@
-
 import { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Search as SearchIcon } from "lucide-react";
@@ -101,7 +100,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </div>
           </div>
           <p className="mt-4 text-sm text-white/60">
-            {pagination.total} {pagination.total === 1 ? "product" : "products"} found
+            {pagination.total} {pagination.total === 1 ? "product" : "products"}{" "}
+            found
           </p>
         </div>
       </div>

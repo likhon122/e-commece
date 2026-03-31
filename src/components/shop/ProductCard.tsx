@@ -61,7 +61,9 @@ export default function ProductCard({ product, className }: ProductCardProps) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: wasInWishlist ? undefined : JSON.stringify({ productId: product._id }),
+          body: wasInWishlist
+            ? undefined
+            : JSON.stringify({ productId: product._id }),
         },
       );
 
@@ -71,7 +73,9 @@ export default function ProductCard({ product, className }: ProductCardProps) {
     } catch (error) {
       // Roll back optimistic update if server update fails.
       toggleItem(product._id);
-      toast.error(error instanceof Error ? error.message : "Failed to update wishlist");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update wishlist",
+      );
     }
   };
 
@@ -204,8 +208,8 @@ export default function ProductCard({ product, className }: ProductCardProps) {
                     }
                   />
                 ))}
-              {Array.from(new Set(product.variants.map((v) => v.colorCode))).length >
-                4 && (
+              {Array.from(new Set(product.variants.map((v) => v.colorCode)))
+                .length > 4 && (
                 <span className="text-xs text-secondary-500">
                   +
                   {Array.from(new Set(product.variants.map((v) => v.colorCode)))

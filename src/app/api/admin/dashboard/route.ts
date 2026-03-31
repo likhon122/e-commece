@@ -227,7 +227,10 @@ export async function GET(request: NextRequest) {
 
       salesTrend.push({
         date: key,
-        label: day.toLocaleDateString("en-BD", { month: "short", day: "numeric" }),
+        label: day.toLocaleDateString("en-BD", {
+          month: "short",
+          day: "numeric",
+        }),
         revenue: trendValue.revenue,
         orders: trendValue.orders,
       });
@@ -273,7 +276,8 @@ export async function GET(request: NextRequest) {
     ]
       .sort(
         (left, right) =>
-          new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+          new Date(right.createdAt).getTime() -
+          new Date(left.createdAt).getTime(),
       )
       .slice(0, historyLimit * 2);
 

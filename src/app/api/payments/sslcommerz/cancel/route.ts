@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/connection";
 import { CheckoutSession, Order } from "@/lib/db/models";
+import { getCallbackBaseUrl } from "@/lib/payments/base-url";
 import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
 import { releaseReservedOrderStock } from "@/lib/orders/inventory";
 import {
@@ -24,7 +25,7 @@ async function handleCancel(request: NextRequest) {
   const payload = data as Record<string, unknown>;
   const tran_id = data.tran_id as string;
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+  const baseUrl = getCallbackBaseUrl(request);
 
   const hasSignatureFields =
     typeof payload.verify_sign === "string" &&

@@ -3,6 +3,7 @@ import connectDB from "@/lib/db/connection";
 import { CheckoutSession } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { initSSLCommerz } from "@/lib/payments/sslcommerz";
+import { getCallbackBaseUrl } from "@/lib/payments/base-url";
 import {
   checkRateLimit,
   rateLimitExceededResponse,
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     checkoutSession.gatewayTransactionId = transactionId;
     await checkoutSession.save();
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+    const baseUrl = getCallbackBaseUrl(request);
 
     const response = await initSSLCommerz({
       total_amount: checkoutSession.total,

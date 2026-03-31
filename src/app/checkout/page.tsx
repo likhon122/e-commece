@@ -141,11 +141,11 @@ export default function CheckoutPage() {
             country: shippingData.country,
           },
           paymentMethod,
-          items: items.map(item => ({
+          items: items.map((item) => ({
             product: item.product._id,
             variant: item.variant,
-            quantity: item.quantity
-          }))
+            quantity: item.quantity,
+          })),
         }),
       });
 
@@ -200,9 +200,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          paymentMethod === "sslcommerz"
-            ? { checkoutSessionId }
-            : { orderId },
+          paymentMethod === "sslcommerz" ? { checkoutSessionId } : { orderId },
         ),
       });
 

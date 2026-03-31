@@ -220,7 +220,10 @@ const ProductSchema = new Schema<IProductDoc>(
 
 // Virtual for total stock
 ProductSchema.virtual("totalStock").get(function (this: any) {
-  return this.variants.reduce((total: number, variant: any) => total + variant.stock, 0);
+  return this.variants.reduce(
+    (total: number, variant: any) => total + variant.stock,
+    0,
+  );
 });
 
 // Generate slug before saving

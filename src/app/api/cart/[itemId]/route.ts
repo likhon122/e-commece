@@ -130,7 +130,9 @@ export async function DELETE(
       );
     }
 
-    cart.items = cart.items.filter((item: any) => item._id.toString() !== itemId);
+    cart.items = cart.items.filter(
+      (item: any) => item._id.toString() !== itemId,
+    );
     await cart.save();
     await cart.populate("items.product");
 

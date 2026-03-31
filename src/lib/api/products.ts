@@ -52,7 +52,9 @@ export interface ProductFacets {
 /**
  * Fetch products with advanced filtering - Server-side
  */
-export async function getProducts(filters: ProductFilters = {}): Promise<ProductsResult> {
+export async function getProducts(
+  filters: ProductFilters = {},
+): Promise<ProductsResult> {
   try {
     await connectDB();
 
@@ -183,7 +185,9 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
 
     // Color filtering
     if (colors.length > 0) {
-      query["variants.color"] = { $in: colors.map((c) => new RegExp(`^${c}$`, "i")) };
+      query["variants.color"] = {
+        $in: colors.map((c) => new RegExp(`^${c}$`, "i")),
+      };
     }
 
     // Tags filtering
@@ -286,8 +290,12 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
       data: products.map((p) => ({
         ...p,
         _id: p._id.toString(),
-        category: p.category ? { ...p.category, _id: p.category._id?.toString() } : null,
-        subcategory: p.subcategory ? { ...p.subcategory, _id: p.subcategory._id?.toString() } : null,
+        category: p.category
+          ? { ...p.category, _id: p.category._id?.toString() }
+          : null,
+        subcategory: p.subcategory
+          ? { ...p.subcategory, _id: p.subcategory._id?.toString() }
+          : null,
       })) as unknown as IProduct[],
       pagination: {
         page,
@@ -302,8 +310,15 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
     return {
       success: false,
       data: [],
-      pagination: { page: 1, limit: 12, total: 0, totalPages: 0, hasMore: false },
-      error: error instanceof Error ? error.message : "Failed to fetch products",
+      pagination: {
+        page: 1,
+        limit: 12,
+        total: 0,
+        totalPages: 0,
+        hasMore: false,
+      },
+      error:
+        error instanceof Error ? error.message : "Failed to fetch products",
     };
   }
 }
@@ -311,7 +326,9 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
 /**
  * Fetch a single product by slug
  */
-export async function getProductBySlug(slug: string): Promise<SingleProductResult> {
+export async function getProductBySlug(
+  slug: string,
+): Promise<SingleProductResult> {
   try {
     await connectDB();
 
@@ -351,7 +368,9 @@ export async function getProductBySlug(slug: string): Promise<SingleProductResul
 /**
  * Get product facets for filtering
  */
-export async function getProductFacets(categorySlug?: string): Promise<ProductFacets> {
+export async function getProductFacets(
+  categorySlug?: string,
+): Promise<ProductFacets> {
   try {
     await connectDB();
 
@@ -387,7 +406,12 @@ export async function getProductFacets(categorySlug?: string): Promise<ProductFa
           ],
           colors: [
             { $unwind: "$variants" },
-            { $group: { _id: "$variants.color", colorCode: { $first: "$variants.colorCode" } } },
+            {
+              $group: {
+                _id: "$variants.color",
+                colorCode: { $first: "$variants.colorCode" },
+              },
+            },
             { $sort: { _id: 1 } },
           ],
           tags: [
@@ -403,14 +427,17 @@ export async function getProductFacets(categorySlug?: string): Promise<ProductFa
     const result = facets[0];
     return {
       priceRange: result?.priceRange[0] || { minPrice: 0, maxPrice: 10000 },
-      sizes: result?.sizes.map((s: { _id: string }) => s._id).filter(Boolean) || [],
-      colors: result?.colors
-        .filter((c: { _id: string }) => c._id)
-        .map((c: { _id: string; colorCode?: string }) => ({
-          name: c._id,
-          code: c.colorCode || "#000000",
-        })) || [],
-      tags: result?.tags.map((t: { _id: string }) => t._id).filter(Boolean) || [],
+      sizes:
+        result?.sizes.map((s: { _id: string }) => s._id).filter(Boolean) || [],
+      colors:
+        result?.colors
+          .filter((c: { _id: string }) => c._id)
+          .map((c: { _id: string; colorCode?: string }) => ({
+            name: c._id,
+            code: c.colorCode || "#000000",
+          })) || [],
+      tags:
+        result?.tags.map((t: { _id: string }) => t._id).filter(Boolean) || [],
     };
   } catch (error) {
     console.error("Failed to fetch product facets:", error);
@@ -445,7 +472,7 @@ export async function getNewArrivals(limit = 8): Promise<IProduct[]> {
 export async function getRelatedProducts(
   productId: string,
   categorySlug: string,
-  limit = 4
+  limit = 4,
 ): Promise<IProduct[]> {
   try {
     await connectDB();

@@ -132,10 +132,7 @@ export async function getAuthFromRequest(
       return {
         userId: String(nextAuthToken.id),
         email: String(nextAuthToken.email),
-        role:
-          nextAuthToken.role === "admin"
-            ? "admin"
-            : "user",
+        role: nextAuthToken.role === "admin" ? "admin" : "user",
       };
     }
   } catch {

@@ -4,6 +4,7 @@ import { Cart, CheckoutSession, Order, User } from "@/lib/db/models";
 import { validateSSLCommerzPayment } from "@/lib/payments/sslcommerz";
 import { sendOrderStatusUpdateEmail } from "@/lib/email";
 import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
+import { getCallbackBaseUrl } from "@/lib/payments/base-url";
 import {
   confirmReservedOrderStock,
   releaseReservedOrderStock,
@@ -13,7 +14,7 @@ import {
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 
 function getBaseUrl(request: NextRequest): string {
-  return process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+  return getCallbackBaseUrl(request);
 }
 
 function isAmountMatch(expected: number, received: string): boolean {
