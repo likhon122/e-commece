@@ -301,8 +301,8 @@ export async function GET(request: NextRequest) {
           _id: order._id.toString(),
           orderNumber: order.orderNumber,
           customer: {
-            name: (order.user as { name: string })?.name || "Guest",
-            email: (order.user as { email: string })?.email || "",
+            name: (order.user as unknown as { name?: string })?.name || "Guest",
+            email: (order.user as unknown as { email?: string })?.email || "",
           },
           total: order.total,
           status: order.status,

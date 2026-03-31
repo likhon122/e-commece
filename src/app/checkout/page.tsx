@@ -177,9 +177,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      const createdOrder = orderJson.data?.order;
+      const createdOrder = (orderJson.data as any)?.order;
       const orderId = createdOrder?._id;
-      const checkoutSessionId = orderJson.data?.checkoutSession?._id;
+      const checkoutSessionId = (orderJson.data as any)?.checkoutSession?._id;
 
       if (paymentMethod === "sslcommerz" && !checkoutSessionId) {
         setError("Checkout session was not created. Please try again.");

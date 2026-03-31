@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // Add new item
-        cart.items.push({ product: productId, variant, quantity, price });
+        cart.items.push({ product: productId as any, variant, quantity, price });
       }
     }
 

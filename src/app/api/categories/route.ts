@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
           .map((cat) => ({
             ...cat,
             children: buildTree(cat._id.toString()),
-          }));
+          })) as unknown as typeof categories;
       };
 
       const categoryTree = buildTree(null);

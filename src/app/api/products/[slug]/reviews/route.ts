@@ -60,7 +60,7 @@ export async function POST(
 
     // Add review
     product.reviews.push({
-      user: user.userId,
+      user: user.userId as any,
       rating,
       comment,
       createdAt: new Date(),

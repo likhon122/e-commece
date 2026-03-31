@@ -192,7 +192,7 @@ export default function ProductCard({ product, className }: ProductCardProps) {
           {/* Color Options */}
           {product.variants.length > 1 && (
             <div className="mt-3 flex gap-1">
-              {[...new Set(product.variants.map((v) => v.colorCode))]
+              {Array.from(new Set(product.variants.map((v) => v.colorCode)))
                 .slice(0, 4)
                 .map((color) => (
                   <div
@@ -204,11 +204,11 @@ export default function ProductCard({ product, className }: ProductCardProps) {
                     }
                   />
                 ))}
-              {[...new Set(product.variants.map((v) => v.colorCode))].length >
+              {Array.from(new Set(product.variants.map((v) => v.colorCode))).length >
                 4 && (
                 <span className="text-xs text-secondary-500">
                   +
-                  {[...new Set(product.variants.map((v) => v.colorCode))]
+                  {Array.from(new Set(product.variants.map((v) => v.colorCode)))
                     .length - 4}
                 </span>
               )}
