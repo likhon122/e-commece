@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import mongoose from "mongoose";
 import connectDB from "@/lib/db/connection";
 import { Order, Cart, User, CheckoutSession } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
@@ -76,9 +77,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!mongoose.Types.ObjectId.isValid(authUser.userId)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Authentication session is invalid. Please sign out, sign in again, then retry checkout.",
+        },
+        { status: 401 },
+      );
+    }
+
+    const authUserObjectId = new mongoose.Types.ObjectId(authUser.userId);
+
     await connectDB();
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: "Invalid request body" },
+        { status: 400 },
+      );
+    }
+
     const validationResult = createOrderSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -96,7 +119,7 @@ export async function POST(request: NextRequest) {
       validationResult.data;
 
     // Get user's cart
-    let cart = await Cart.findOne({ user: authUser.userId }).populate("items.product");
+    let cart = await Cart.findOne({ user: authUserObjectId }).populate("items.product");
 
     // Fallback to session ID if cart is empty or not found for user
     if (!cart || cart.items.length === 0) {
@@ -145,26 +168,38 @@ export async function POST(request: NextRequest) {
       const cookieStore = await cookies();
       const cartSessionId = cookieStore.get("cartSessionId")?.value;
 
-      const checkoutSession = await CheckoutSession.create({
-        user: authUser.userId,
-        cartSessionId,
-        paymentMethod: "sslcommerz",
-        shippingAddress,
-        billingAddress: billingAddress || shippingAddress,
-        notes,
-        items: orderItems.map((item) => ({
-          product: item.product,
-          variant: item.variant,
-          quantity: item.quantity,
-        })),
-        subtotal,
-        shippingCost,
-        tax,
-        discount,
-        total,
-        status: "pending",
-        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
-      });
+      let checkoutSession;
+      try {
+        checkoutSession = await CheckoutSession.create({
+          user: authUserObjectId,
+          cartSessionId,
+          paymentMethod: "sslcommerz",
+          shippingAddress,
+          billingAddress: billingAddress || shippingAddress,
+          notes,
+          items: orderItems.map((item) => ({
+            product: item.product,
+            variant: item.variant,
+            quantity: item.quantity,
+          })),
+          subtotal,
+          shippingCost,
+          tax,
+          discount,
+          total,
+          status: "pending",
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        });
+      } catch (checkoutSessionError) {
+        console.error("Checkout session create error:", checkoutSessionError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Failed to create checkout session. Please retry.",
+          },
+          { status: 500 },
+        );
+      }
 
       return NextResponse.json({
         success: true,
@@ -181,23 +216,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order
-    const order = await Order.create({
-      user: authUser.userId,
-      items: orderItems,
-      subtotal,
-      shippingCost,
-      tax,
-      discount,
-      total,
-      shippingAddress,
-      billingAddress: billingAddress || shippingAddress,
-      paymentMethod,
-      paymentStatus: "pending",
-      stockReservationStatus: "reserved",
-      status: "pending",
-      notes,
-      statusHistory: [{ status: "pending", updatedAt: new Date() }],
-    });
+    let order;
+    try {
+      order = await Order.create({
+        user: authUserObjectId,
+        items: orderItems,
+        subtotal,
+        shippingCost,
+        tax,
+        discount,
+        total,
+        shippingAddress,
+        billingAddress: billingAddress || shippingAddress,
+        paymentMethod,
+        paymentStatus: "pending",
+        stockReservationStatus: "reserved",
+        status: "pending",
+        notes,
+        statusHistory: [{ status: "pending", updatedAt: new Date() }],
+      });
+    } catch (orderCreateError) {
+      console.error("Order create db error:", orderCreateError);
+      return NextResponse.json(
+        { success: false, error: "Failed to persist order. Please retry." },
+        { status: 500 },
+      );
+    }
 
     try {
       await reserveOrderStock(order._id.toString());
@@ -226,25 +270,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user for email
-    const user = await User.findById(authUser.userId);
+    const user = await User.findById(authUserObjectId);
 
     // Send confirmation email
     if (user) {
-      await sendOrderConfirmationEmail(
-        user.email,
-        user.name,
-        order.orderNumber,
-        {
-          items: orderItems.map((item) => ({
-            name: item.productName,
-            quantity: item.quantity,
-            price: item.total,
-          })),
-          subtotal,
-          shipping: shippingCost,
-          total,
-        },
-      );
+      try {
+        await sendOrderConfirmationEmail(
+          user.email,
+          user.name,
+          order.orderNumber,
+          {
+            items: orderItems.map((item) => ({
+              name: item.productName,
+              quantity: item.quantity,
+              price: item.total,
+            })),
+            subtotal,
+            shipping: shippingCost,
+            total,
+          },
+        );
+      } catch (emailError) {
+        // Do not fail checkout when email provider is down.
+        console.error("Order confirmation email error:", emailError);
+      }
     }
 
     return NextResponse.json({
@@ -262,6 +311,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Create order error:", error);
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("Cast to ObjectId")) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Authentication session is invalid. Please sign out, sign in again, then retry checkout.",
+        },
+        { status: 401 },
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: "Failed to create order" },
       { status: 500 },
