@@ -43,7 +43,7 @@ export async function verifyAccessToken(
 ): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as JWTPayload;
+    return payload as unknown as JWTPayload;
   } catch {
     return null;
   }
@@ -54,7 +54,7 @@ export async function verifyRefreshToken(
 ): Promise<JWTPayload | null> {
   try {
     const { payload } = await jwtVerify(token, JWT_REFRESH_SECRET);
-    return payload as JWTPayload;
+    return payload as unknown as JWTPayload;
   } catch {
     return null;
   }

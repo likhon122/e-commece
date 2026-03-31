@@ -236,8 +236,9 @@ export default function AdminProductCreateForm({
       childrenByParent.set(parentId, current);
     }
 
-    for (const rows of childrenByParent.values()) {
-      rows.sort((a, b) => a.name.localeCompare(b.name));
+    const valuesArr = Array.from(childrenByParent.values());
+    for (const rows of valuesArr) {
+      rows.sort((a: any, b: any) => a.name.localeCompare(b.name));
     }
 
     const flattened: Array<{ _id: string; name: string; depth: number; path: string }> = [];

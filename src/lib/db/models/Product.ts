@@ -197,6 +197,7 @@ const ProductSchema = new Schema<IProductDoc>(
       type: Boolean,
       default: false,
     },
+    // @ts-ignore - isNew conflicts with mongoose internal isNew property
     isNew: {
       type: Boolean,
       default: true,
@@ -218,12 +219,12 @@ const ProductSchema = new Schema<IProductDoc>(
 );
 
 // Virtual for total stock
-ProductSchema.virtual("totalStock").get(function () {
-  return this.variants.reduce((total, variant) => total + variant.stock, 0);
+ProductSchema.virtual("totalStock").get(function (this: any) {
+  return this.variants.reduce((total: number, variant: any) => total + variant.stock, 0);
 });
 
 // Generate slug before saving
-ProductSchema.pre("save", function (next) {
+ProductSchema.pre("save", function (this: any, next) {
   if (this.isModified("name") || !this.slug) {
     this.slug = slugify(this.name, { lower: true, strict: true });
   }

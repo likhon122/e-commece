@@ -94,7 +94,7 @@ export async function getParentCategories(): Promise<CategoriesResult> {
       data: categories.map((cat) => ({
         ...cat,
         _id: cat._id.toString(),
-      })) as CategoryWithChildren[],
+      })) as unknown as CategoryWithChildren[],
     };
   } catch (error) {
     console.error("Failed to fetch parent categories:", error);
@@ -195,7 +195,7 @@ export async function getSubcategories(
         ...cat,
         _id: cat._id.toString(),
         parent: cat.parent?.toString(),
-      })) as CategoryWithChildren[],
+      })) as unknown as CategoryWithChildren[],
     };
   } catch (error) {
     console.error("Failed to fetch subcategories:", error);
@@ -243,13 +243,13 @@ export async function getCategoryBreadcrumb(
         ? ({
             ...category,
             _id: category._id.toString(),
-          } as CategoryWithChildren)
+          } as unknown as CategoryWithChildren)
         : null,
       subcategory: subcategory
         ? ({
             ...subcategory,
             _id: subcategory._id.toString(),
-          } as CategoryWithChildren)
+          } as unknown as CategoryWithChildren)
         : null,
     };
   } catch (error) {

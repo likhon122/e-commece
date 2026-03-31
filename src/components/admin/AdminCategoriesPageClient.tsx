@@ -334,16 +334,6 @@ export default function AdminCategoriesPageClient() {
     const run = async () => {
       try {
         await Promise.all([loadCategories(), loadFlatCategories()]);
-        // Expand all by default
-        const allIds = new Set<string>();
-        const collectIds = (nodes: CategoryNode[]) => {
-          nodes.forEach((n) => {
-            allIds.add(n._id);
-            if (n.children) collectIds(n.children);
-          });
-        };
-        collectIds(categories);
-        setExpandedNodes(allIds);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch categories");
       } finally {

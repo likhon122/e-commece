@@ -288,7 +288,7 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Product
         _id: p._id.toString(),
         category: p.category ? { ...p.category, _id: p.category._id?.toString() } : null,
         subcategory: p.subcategory ? { ...p.subcategory, _id: p.subcategory._id?.toString() } : null,
-      })) as IProduct[],
+      })) as unknown as IProduct[],
       pagination: {
         page,
         limit,
@@ -336,7 +336,7 @@ export async function getProductBySlug(slug: string): Promise<SingleProductResul
       data: {
         ...product,
         _id: product._id.toString(),
-      } as IProduct,
+      } as unknown as IProduct,
     };
   } catch (error) {
     console.error("Failed to fetch product:", error);
@@ -462,7 +462,7 @@ export async function getRelatedProducts(
     return products.map((p) => ({
       ...p,
       _id: p._id.toString(),
-    })) as IProduct[];
+    })) as unknown as IProduct[];
   } catch (error) {
     console.error("Failed to fetch related products:", error);
     return [];

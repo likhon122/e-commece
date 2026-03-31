@@ -58,7 +58,7 @@ export async function PUT(
     }
 
     const itemIndex = cart.items.findIndex(
-      (item) => item._id.toString() === itemId,
+      (item: any) => item._id.toString() === itemId,
     );
 
     if (itemIndex === -1) {
@@ -130,7 +130,7 @@ export async function DELETE(
       );
     }
 
-    cart.items = cart.items.filter((item) => item._id.toString() !== itemId);
+    cart.items = cart.items.filter((item: any) => item._id.toString() !== itemId);
     await cart.save();
     await cart.populate("items.product");
 

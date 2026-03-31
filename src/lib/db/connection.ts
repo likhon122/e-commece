@@ -24,7 +24,7 @@ if (!cached) {
 
 export async function connectDB(): Promise<typeof mongoose> {
   if (cached!.conn) {
-    return cached!.conn;
+    return cached!.conn as unknown as typeof mongoose;
   }
 
   if (!cached!.promise) {
@@ -32,9 +32,9 @@ export async function connectDB(): Promise<typeof mongoose> {
       bufferCommands: false,
     };
 
-    cached!.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached!.promise = mongoose.connect(MONGODB_URI!, opts).then((mongooseInstance) => {
       console.log("MongoDB connected successfully");
-      return mongoose;
+      return mongooseInstance as any;
     });
   }
 
@@ -45,7 +45,7 @@ export async function connectDB(): Promise<typeof mongoose> {
     throw e;
   }
 
-  return cached!.conn;
+  return cached!.conn as unknown as typeof mongoose;
 }
 
 export default connectDB;

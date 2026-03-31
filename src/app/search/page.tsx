@@ -89,7 +89,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     Search Results
                   </p>
                   <h1 className="mt-1 text-3xl font-bold text-white md:text-4xl">
-                    "{query}"
+                    &quot;{query}&quot;
                   </h1>
                 </>
               ) : (
