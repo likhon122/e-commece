@@ -3,44 +3,23 @@ import connectDB from "@/lib/db/connection";
 import { Cart, Product } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { addToCartSchema } from "@/lib/validations";
-import { v4 as uuidv4 } from "uuid";
-import { cookies } from "next/headers";
 import { getAvailableStock } from "@/lib/orders/inventory";
-
-// Helper to get or create session ID for guest users
-async function getSessionId(): Promise<string> {
-  const cookieStore = await cookies();
-  let sessionId = cookieStore.get("cartSessionId")?.value;
-
-  if (!sessionId) {
-    sessionId = uuidv4();
-    cookieStore.set("cartSessionId", sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60, // 30 days
-      path: "/",
-    });
-  }
-
-  return sessionId;
-}
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
     const user = await getAuthFromRequest(request);
-
-    let cart;
-    if (user) {
-      cart = await Cart.findOne({ user: user.userId }).populate(
-        "items.product",
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 },
       );
-    } else {
-      const sessionId = await getSessionId();
-      cart = await Cart.findOne({ sessionId }).populate("items.product");
     }
+
+    const cart = await Cart.findOne({ user: user.userId }).populate(
+      "items.product",
+    );
 
     if (!cart) {
       return NextResponse.json({
@@ -65,6 +44,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
+
+    const user = await getAuthFromRequest(request);
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Login required to add items to cart",
+        },
+        { status: 401 },
+      );
+    }
 
     const body = await request.json();
     const validationResult = addToCartSchema.safeParse(body);
@@ -107,22 +97,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await getAuthFromRequest(request);
     const price =
       productVariant.price || product.salePrice || product.basePrice;
 
-    let cart;
-    if (user) {
-      cart = await Cart.findOne({ user: user.userId });
-    } else {
-      const sessionId = await getSessionId();
-      cart = await Cart.findOne({ sessionId });
-    }
+    let cart = await Cart.findOne({ user: user.userId });
 
     if (!cart) {
       // Create new cart
       cart = new Cart({
-        ...(user ? { user: user.userId } : { sessionId: await getSessionId() }),
+        user: user.userId,
         items: [{ product: productId, variant, quantity, price }],
       });
     } else {
@@ -180,13 +163,14 @@ export async function DELETE(request: NextRequest) {
     await connectDB();
 
     const user = await getAuthFromRequest(request);
-
-    if (user) {
-      await Cart.findOneAndDelete({ user: user.userId });
-    } else {
-      const sessionId = await getSessionId();
-      await Cart.findOneAndDelete({ sessionId });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 },
+      );
     }
+
+    await Cart.findOneAndDelete({ user: user.userId });
 
     return NextResponse.json({
       success: true,

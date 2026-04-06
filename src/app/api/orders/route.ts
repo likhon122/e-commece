@@ -5,7 +5,8 @@ import connectDB from "@/lib/db/connection";
 import { Order, Cart, User, CheckoutSession } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { createOrderSchema } from "@/lib/validations";
-import { sendOrderConfirmationEmail } from "@/lib/email";
+import { sendAdminOrderAlertEmail, sendOrderConfirmationEmail } from "@/lib/email";
+import { notifyAllAdmins } from "@/lib/notifications";
 import {
   calculateOrderTotals,
   confirmReservedOrderStock,
@@ -271,6 +272,40 @@ export async function POST(request: NextRequest) {
 
     // Get user for email
     const user = await User.findById(authUserObjectId);
+
+    try {
+      const adminRecipients = await notifyAllAdmins({
+        type: "order-created",
+        title: `New order ${order.orderNumber}`,
+        message: `Customer ${
+          user?.name || shippingAddress.name
+        } placed an order worth ৳${Number(order.total || 0).toLocaleString()}.`,
+        orderId: order._id,
+        orderNumber: order.orderNumber,
+        metadata: {
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          total: order.total,
+        },
+      });
+
+      const offlineAdmins = adminRecipients.filter((admin) => !admin.online);
+      await Promise.all(
+        offlineAdmins.map((admin) =>
+          sendAdminOrderAlertEmail(
+            admin.email,
+            "Admin",
+            order.orderNumber,
+            user?.name || shippingAddress.name,
+            Number(order.total || 0),
+            order.paymentMethod,
+            order.paymentStatus,
+          ),
+        ),
+      );
+    } catch (notifyError) {
+      console.error("Admin new-order notification error:", notifyError);
+    }
 
     // Send confirmation email
     if (user) {

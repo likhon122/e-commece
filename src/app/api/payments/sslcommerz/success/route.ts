@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/connection";
 import { Cart, CheckoutSession, Order, User } from "@/lib/db/models";
 import { validateSSLCommerzPayment } from "@/lib/payments/sslcommerz";
-import { sendOrderStatusUpdateEmail } from "@/lib/email";
+import { sendAdminOrderAlertEmail, sendOrderStatusUpdateEmail } from "@/lib/email";
 import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
 import { getCallbackBaseUrl } from "@/lib/payments/base-url";
 import { readPaymentCallbackPayload } from "@/lib/payments/callback-payload";
+import { notifyAllAdmins } from "@/lib/notifications";
 import {
   buildOrderItemsFromCheckoutSession,
   confirmReservedOrderStock,
@@ -29,6 +30,50 @@ function isAmountMatch(expected: number, received: string): boolean {
 
 async function getPayload(request: NextRequest): Promise<Record<string, unknown>> {
   return readPaymentCallbackPayload(request);
+}
+
+async function notifyAdminsPaidOrder(
+  order: {
+    _id: unknown;
+    orderNumber: string;
+    total: number;
+    paymentMethod: string;
+    paymentStatus: string;
+  },
+  customerName: string,
+) {
+  try {
+    const adminRecipients = await notifyAllAdmins({
+      type: "payment-update",
+      title: `Payment confirmed for ${order.orderNumber}`,
+      message: `${customerName} completed payment. Total ৳${Number(
+        order.total || 0,
+      ).toLocaleString()}.`,
+      orderId: order._id as any,
+      orderNumber: order.orderNumber,
+      metadata: {
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+      },
+    });
+
+    const offlineAdmins = adminRecipients.filter((admin) => !admin.online);
+    await Promise.all(
+      offlineAdmins.map((admin) =>
+        sendAdminOrderAlertEmail(
+          admin.email,
+          "Admin",
+          order.orderNumber,
+          customerName,
+          Number(order.total || 0),
+          order.paymentMethod,
+          order.paymentStatus,
+        ),
+      ),
+    );
+  } catch (notifyError) {
+    console.error("SSLCommerz admin payment notification error:", notifyError);
+  }
 }
 
 async function handleSuccess(request: NextRequest): Promise<NextResponse> {
@@ -163,6 +208,13 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
           order.orderNumber,
           stockConfirmed ? "confirmed" : "pending",
         );
+
+        await notifyAdminsPaidOrder(order, legacyUser.name);
+      } else {
+        await notifyAdminsPaidOrder(
+          order,
+          order.shippingAddress?.name || "Customer",
+        );
       }
     } catch (emailError) {
       // Do not fail payment confirmation when email delivery fails.
@@ -278,6 +330,13 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
         user.name,
         order.orderNumber,
         stockConfirmed ? "confirmed" : "pending",
+      );
+
+      await notifyAdminsPaidOrder(order, user.name);
+    } else {
+      await notifyAdminsPaidOrder(
+        order,
+        order.shippingAddress?.name || "Customer",
       );
     }
   } catch (emailError) {

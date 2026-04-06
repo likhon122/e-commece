@@ -34,7 +34,15 @@ import {
   Bar,
   Legend,
 } from "recharts";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  PremiumFullPageLoading,
+} from "@/components/ui";
 
 type DashboardData = {
   generatedAt: string;
@@ -308,16 +316,11 @@ export default function AdminDashboardClient() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <div className="relative mx-auto h-16 w-16">
-            <div className="absolute inset-0 rounded-full border-4 border-[#B0E4CC]" />
-            <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-[#285A48]" />
-            <Zap className="absolute inset-0 m-auto h-6 w-6 text-[#285A48]" />
-          </div>
-          <p className="mt-4 text-sm font-medium text-secondary-600">Loading Executive Dashboard...</p>
-          <p className="mt-1 text-xs text-secondary-400">Fetching real-time analytics</p>
-        </div>
+      <div className="py-4">
+        <PremiumFullPageLoading
+          title="Loading executive dashboard"
+          subtitle="Fetching KPIs, real-time signals, and strategic commerce highlights."
+        />
       </div>
     );
   }

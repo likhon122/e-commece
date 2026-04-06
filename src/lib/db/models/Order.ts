@@ -229,10 +229,17 @@ OrderSchema.pre("save", function (next) {
     this.orderNumber = generateOrderNumber();
   }
 
+  const statusNoteRaw = (this as any).$locals?.statusNote;
+  const statusNote =
+    typeof statusNoteRaw === "string" && statusNoteRaw.trim().length > 0
+      ? statusNoteRaw.trim().slice(0, 300)
+      : undefined;
+
   // Add to status history if status changed
   if (this.isModified("status")) {
     this.statusHistory.push({
       status: this.status,
+      note: statusNote,
       updatedAt: new Date(),
     });
   }

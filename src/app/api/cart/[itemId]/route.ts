@@ -3,13 +3,7 @@ import connectDB from "@/lib/db/connection";
 import { Cart, Product } from "@/lib/db/models";
 import { getAuthFromRequest } from "@/lib/auth";
 import { updateCartItemSchema } from "@/lib/validations";
-import { cookies } from "next/headers";
 import { getAvailableStock } from "@/lib/orders/inventory";
-
-async function getSessionId(): Promise<string | undefined> {
-  const cookieStore = await cookies();
-  return cookieStore.get("cartSessionId")?.value;
-}
 
 export async function PUT(
   request: NextRequest,
@@ -35,20 +29,14 @@ export async function PUT(
 
     const { quantity } = validationResult.data;
     const user = await getAuthFromRequest(request);
-
-    let cart;
-    if (user) {
-      cart = await Cart.findOne({ user: user.userId });
-    } else {
-      const sessionId = await getSessionId();
-      if (!sessionId) {
-        return NextResponse.json(
-          { success: false, error: "Cart not found" },
-          { status: 404 },
-        );
-      }
-      cart = await Cart.findOne({ sessionId });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 },
+      );
     }
+
+    const cart = await Cart.findOne({ user: user.userId });
 
     if (!cart) {
       return NextResponse.json(
@@ -108,20 +96,14 @@ export async function DELETE(
 
     const { itemId } = await params;
     const user = await getAuthFromRequest(request);
-
-    let cart;
-    if (user) {
-      cart = await Cart.findOne({ user: user.userId });
-    } else {
-      const sessionId = await getSessionId();
-      if (!sessionId) {
-        return NextResponse.json(
-          { success: false, error: "Cart not found" },
-          { status: 404 },
-        );
-      }
-      cart = await Cart.findOne({ sessionId });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 },
+      );
     }
+
+    const cart = await Cart.findOne({ user: user.userId });
 
     if (!cart) {
       return NextResponse.json(

@@ -86,6 +86,29 @@
 }
 
 @layer utilities {
+  @keyframes mythium-shimmer {
+    0% {
+      background-position: 220% 0;
+    }
+    100% {
+      background-position: -220% 0;
+    }
+  }
+
+  @keyframes mythium-progress {
+    0% {
+      transform: translateX(-65%);
+    }
+    100% {
+      transform: translateX(165%);
+    }
+  }
+
+  .premium-shimmer {
+    background-size: 220% 100%;
+    animation: mythium-shimmer 1.7s linear infinite;
+  }
+
   .text-balance {
     text-wrap: balance;
   }

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { Heart, ShoppingBag, Star } from "lucide-react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
@@ -20,6 +21,8 @@ export default function ProductCard({ product, className }: ProductCardProps) {
   const { addItem, openCart } = useCartStore();
   const { isInWishlist, toggleItem } = useWishlistStore();
   const { status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const primaryImage =
     product.images.find((img) => img.isPrimary)?.url || product.images[0]?.url;
@@ -30,6 +33,13 @@ export default function ProductCard({ product, className }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (status !== "authenticated") {
+      toast.error("Please login to add items to cart");
+      const callbackUrl = encodeURIComponent(pathname || "/products");
+      router.push(`/login?callbackUrl=${callbackUrl}`);
+      return;
+    }
 
     // Add first available variant
     const availableVariant = product.variants.find((v) => v.stock > 0);

@@ -21,3 +21,9 @@ export {
   default as CheckoutSession,
   type ICheckoutSessionDoc,
 } from "./CheckoutSession";
+export {
+  default as Notification,
+  type INotificationDoc,
+  type NotificationAudience,
+  type NotificationType,
+} from "./Notification";

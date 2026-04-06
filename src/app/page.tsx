@@ -6,21 +6,23 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
-  ArrowLeft,
   Truck,
   ShieldCheck,
   RefreshCw,
   Headphones,
   Sparkles,
   Crown,
-  Star,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui";
-import FeaturedProductsSection from "@/components/shop/FeaturedProductsSection";
-import { NewArrivalsProductsSection } from "@/components/shop";
-
+import {
+  FeaturedProductsSection,
+  HomeNewsletterSection,
+  MostLovedProductsSection,
+  NewArrivalsProductsSection,
+  StyleResourcesSection,
+} from "@/components/shop";
 
 // Slider data
 const slides = [
@@ -29,8 +31,10 @@ const slides = [
     title: "New Season",
     highlight: "Collection",
     subtitle: "Spring/Summer 2026",
-    description: "Discover the perfect blend of comfort and style with our latest arrivals",
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1920&q=80",
+    description:
+      "Discover the perfect blend of comfort and style with our latest arrivals",
+    image:
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1920&q=80",
     cta: "Shop Collection",
     ctaLink: "/products?new=true",
     badge: "New Arrivals",
@@ -40,8 +44,10 @@ const slides = [
     title: "Premium",
     highlight: "Menswear",
     subtitle: "Crafted for Excellence",
-    description: "Elevate your wardrobe with our handpicked selection of premium men's fashion",
-    image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=1920&q=80",
+    description:
+      "Elevate your wardrobe with our handpicked selection of premium men's fashion",
+    image:
+      "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=1920&q=80",
     cta: "Explore Now",
     ctaLink: "/categories/men",
     badge: "Best Sellers",
@@ -51,8 +57,10 @@ const slides = [
     title: "Exclusive",
     highlight: "Accessories",
     subtitle: "Complete Your Look",
-    description: "From watches to bags, find the perfect accessories to make a statement",
-    image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=1920&q=80",
+    description:
+      "From watches to bags, find the perfect accessories to make a statement",
+    image:
+      "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=1920&q=80",
     cta: "View Collection",
     ctaLink: "/categories/accessories",
     badge: "Limited Edition",
@@ -63,7 +71,8 @@ const slides = [
     highlight: "Up to 50% Off",
     subtitle: "Limited Time Offer",
     description: "Don't miss out on incredible deals across all categories",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&q=80",
+    image:
+      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&q=80",
     cta: "Shop Sale",
     ctaLink: "/products?sale=true",
     badge: "Hot Deal",
@@ -98,23 +107,46 @@ const features = [
 const categories = [
   {
     name: "Men",
-    image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80",
+    image:
+      "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=600&q=80",
     href: "/categories/men",
   },
   {
     name: "Women",
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&q=80",
+    image:
+      "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&q=80",
     href: "/categories/women",
   },
   {
     name: "Accessories",
-    image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=600&q=80",
+    image:
+      "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=600&q=80",
     href: "/categories/accessories",
   },
   {
     name: "Footwear",
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80",
+    image:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80",
     href: "/categories/footwear",
+  },
+];
+
+const premiumStats = [
+  {
+    value: "2,500+",
+    label: "Curated Product Variations",
+  },
+  {
+    value: "98%",
+    label: "On-Time Fulfillment Rate",
+  },
+  {
+    value: "24/7",
+    label: "Dedicated Fashion Support",
+  },
+  {
+    value: "50K+",
+    label: "Premium Community Members",
   },
 ];
 
@@ -188,7 +220,7 @@ export default function HomePage() {
 
                 {/* Content */}
                 <div className="container relative mx-auto flex h-full items-center px-4">
-                  <div className="max-w-2xl">
+                  <div className="max-w-2xl rounded-[2.2rem] border border-[#9fd0bb]/55 bg-[linear-gradient(130deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.1)_100%)] p-7 shadow-[0_24px_70px_-48px_rgba(9,20,19,1)] backdrop-blur-xl sm:p-10">
                     {/* Badge */}
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -203,7 +235,7 @@ export default function HomePage() {
 
                     {/* Subtitle */}
                     <motion.p
-                      className="mt-6 text-sm font-medium uppercase tracking-[0.3em] text-[#B0E4CC]/70"
+                      className="mt-6 text-sm font-medium uppercase tracking-[0.3em] text-white/70"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.3, duration: 0.5 }}
@@ -242,7 +274,10 @@ export default function HomePage() {
                       transition={{ delay: 0.6, duration: 0.5 }}
                     >
                       <Link href={slide.ctaLink}>
-                        <Button variant="primary" size="xl" className="group gap-3">
+                        <Button
+                          size="xl"
+                          className="group gap-3 border border-white/30 bg-white px-8 text-[#285A48] hover:bg-[#F2E3BB]"
+                        >
                           {slide.cta}
                           <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                         </Button>
@@ -251,7 +286,7 @@ export default function HomePage() {
                         <Button
                           variant="outline"
                           size="xl"
-                          className="border-white/30 bg-white/5 text-white backdrop-blur-sm hover:border-white/50 hover:bg-white/10"
+                          className="border-[#B0E4CC]/55 bg-white/15 text-white backdrop-blur-sm hover:border-[#B0E4CC]/90 hover:bg-white/22"
                         >
                           View All Categories
                         </Button>
@@ -260,7 +295,7 @@ export default function HomePage() {
                   </div>
                 </div>
               </motion.div>
-            ) : null
+            ) : null,
           )}
         </AnimatePresence>
 
@@ -297,7 +332,9 @@ export default function HomePage() {
               key={index}
               onClick={() => goToSlide(index)}
               className={`group relative h-3 overflow-hidden rounded-full transition-all duration-300 ${
-                index === currentSlide ? "w-12 bg-[#B0E4CC]" : "w-3 bg-white/30 hover:bg-white/50"
+                index === currentSlide
+                  ? "w-12 bg-[#B0E4CC]"
+                  : "w-3 bg-white/30 hover:bg-white/50"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             >
@@ -319,7 +356,9 @@ export default function HomePage() {
             {String(currentSlide + 1).padStart(2, "0")}
           </span>
           <span className="text-lg">/</span>
-          <span className="text-lg">{String(slides.length).padStart(2, "0")}</span>
+          <span className="text-lg">
+            {String(slides.length).padStart(2, "0")}
+          </span>
         </div>
 
         {/* Scroll Indicator */}
@@ -341,172 +380,164 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* Features Section */}
-      <section className="relative -mt-12 z-10 px-4">
-        <div className="container mx-auto">
-          <motion.div
-            className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6"
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            {features.map((feature) => (
-              <motion.div
-                key={feature.title}
-                className="group rounded-2xl border border-[#B0E4CC]/30 bg-white p-6 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-[#408A71]/50 hover:shadow-2xl"
-                variants={fadeInUp}
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#285A48] to-[#408A71] text-white shadow-lg transition-transform group-hover:scale-110">
-                  <feature.icon className="h-6 w-6" />
-                </div>
-                <h3 className="mt-4 font-semibold text-[#091413]">
-                  {feature.title}
-                </h3>
-                <p className="mt-1 text-sm text-[#091413]/60">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      <main className="relative overflow-hidden bg-gradient-to-b from-[#f6fbf8] via-[#f1f8f4] to-[#eef7f1] pb-20 pt-10 md:pt-20">
+        <div className="pointer-events-none absolute -left-28 top-24 h-72 w-72 rounded-full bg-[#B0E4CC]/40 blur-3xl" />
+        <div className="pointer-events-none absolute -right-28 top-64 h-72 w-72 rounded-full bg-[#d8efe1]/35 blur-3xl" />
 
-      {/* Categories Section */}
-      <section className="py-24 md:py-32">
-        <div className="container mx-auto px-4">
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-[#408A71]">
-              <Crown className="h-4 w-4" />
-              Curated Collections
-            </span>
-            <h2 className="mt-4 text-4xl font-bold text-[#091413] md:text-5xl">
-              Shop by Category
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-[#091413]/60">
-              Explore our carefully curated categories and discover pieces that
-              define your unique style
-            </p>
-          </motion.div>
+        {/* Categories Section */}
+        <section className="relative overflow-hidden px-4">
+          <div className="container mx-auto rounded-[2.2rem] border border-[#8fc8ad]/55 bg-white/55 p-6 backdrop-blur-xl sm:p-8">
+            <motion.div
+              className="text-center"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <span className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-[#408A71]">
+                <Crown className="h-4 w-4" />
+                Curated Collections
+              </span>
+              <h2 className="mt-4 text-4xl font-bold text-[#091413] md:text-5xl">
+                Shop by Category
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-[#091413]/65">
+                Explore carefully curated categories and discover pieces that
+                define your signature style.
+              </p>
+            </motion.div>
 
-          <motion.div
-            className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6"
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-          >
-            {categories.map((category) => (
-              <motion.div key={category.name} variants={fadeInUp}>
-                <Link
-                  href={category.href}
-                  className="group relative block aspect-[3/4] overflow-hidden rounded-3xl"
-                >
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#091413] via-[#091413]/40 to-transparent opacity-80 transition-opacity group-hover:opacity-90" />
-                  <div className="absolute inset-0 rounded-3xl border border-white/10 transition-colors group-hover:border-[#B0E4CC]/30" />
+            <motion.div
+              className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={staggerContainer}
+            >
+              {categories.map((category) => (
+                <motion.div key={category.name} variants={fadeInUp}>
+                  <Link
+                    href={category.href}
+                    className="group relative block aspect-[3/4] overflow-hidden rounded-3xl"
+                  >
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#091413] via-[#091413]/45 to-transparent opacity-90 transition-opacity group-hover:opacity-100" />
+                    <div className="absolute inset-0 rounded-3xl border border-white/20 transition-colors group-hover:border-[#B0E4CC]/60" />
 
-                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-                    <h3 className="text-2xl font-bold text-white md:text-3xl">
-                      {category.name}
-                    </h3>
-                    <span className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm text-white backdrop-blur-sm transition-all group-hover:bg-[#408A71] group-hover:text-white">
-                      Explore <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      <FeaturedProductsSection />
-
-      <NewArrivalsProductsSection />
-
-      {/* Newsletter Banner */}
-      {/* <section className="relative overflow-hidden py-24 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#285A48] via-[#408A71] to-[#285A48]" />
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23B0E4CC' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E")`,
-        }} />
-        <div className="absolute -left-32 top-0 h-64 w-64 rounded-full bg-[#B0E4CC]/30 blur-3xl" />
-        <div className="absolute -right-32 bottom-0 h-64 w-64 rounded-full bg-[#F2E3BB]/20 blur-3xl" />
-
-        <div className="container relative mx-auto px-4">
-          <motion.div
-            className="mx-auto max-w-3xl text-center"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-2 text-sm font-medium text-white">
-              <Crown className="h-4 w-4" />
-              Exclusive Benefits
-            </span>
-            <h2 className="mt-6 text-4xl font-bold text-white md:text-5xl lg:text-6xl">
-              Join the Mythium Family
-            </h2>
-            <p className="mt-6 text-lg text-white/80 md:text-xl">
-              Subscribe to our newsletter and get 10% off your first order, plus
-              exclusive access to new arrivals and special offers.
-            </p>
-            <form className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="rounded-xl border-2 border-white/30 bg-white/15 px-6 py-4 text-white placeholder:text-white/50 backdrop-blur-sm transition-all focus:border-white/50 focus:bg-white/20 focus:outline-none sm:w-96"
-              />
-              <Button
-                type="submit"
-                className="bg-white px-8 py-4 font-semibold text-[#285A48] shadow-xl hover:bg-[#F2E3BB]"
-              >
-                Subscribe Now
-              </Button>
-            </form>
-            <p className="mt-4 text-sm text-white/50">
-              No spam, unsubscribe anytime. We respect your privacy.
-            </p>
-          </motion.div>
-        </div>
-      </section> */}
-
-      {/* Trust Badges */}
-      <section className="border-t border-[#B0E4CC]/20 bg-white py-16">
-        <div className="container mx-auto px-4">
-          <motion.div
-            className="text-center"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            <p className="text-sm font-medium uppercase tracking-widest text-[#091413]/40">
-              Trusted by thousands of happy customers
-            </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-12">
-              {["bKash", "VISA", "MasterCard", "SSL Secure"].map((brand) => (
-                <div
-                  key={brand}
-                  className="text-2xl font-bold text-[#091413]/25 transition-colors hover:text-[#408A71]"
-                >
-                  {brand}
-                </div>
+                    <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+                      <h3 className="text-2xl font-bold text-white md:text-3xl">
+                        {category.name}
+                      </h3>
+                      <span className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#B0E4CC]/55 bg-white/25 px-4 py-2 text-sm text-white backdrop-blur-sm transition-all group-hover:bg-white group-hover:text-[#285A48]">
+                        Explore{" "}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
               ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
+            </motion.div>
+          </div>
+        </section>
+
+        <FeaturedProductsSection />
+
+        <NewArrivalsProductsSection />
+
+        <MostLovedProductsSection />
+
+        <StyleResourcesSection />
+
+        {/* Features Section */}
+        <section className="relative -mt-16 z-10 px-4 pt-6 sm:pt-10">
+          <div className="container mx-auto rounded-[2.2rem] border border-[#8fc8ad]/55 bg-white/55 p-6 shadow-[0_24px_70px_-56px_rgba(24,50,39,0.45)] backdrop-blur-xl sm:p-8">
+            <motion.div
+              className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={staggerContainer}
+            >
+              {features.map((feature) => (
+                <motion.div
+                  key={feature.title}
+                  className="group rounded-2xl border border-[#9fd0bb]/55 bg-white/60 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#75b597]/75"
+                  variants={fadeInUp}
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-[#9fd0bb]/70 bg-white text-[#285A48] shadow-md transition-transform group-hover:scale-110">
+                    <feature.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mt-3 font-semibold text-[#091413]">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-[#091413]/65">
+                    {feature.description}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Metrics Section */}
+        <section className="px-4 pt-8 sm:pt-10">
+          <div className="container mx-auto">
+            <motion.div
+              className="grid grid-cols-2 gap-4 rounded-[2.2rem] border border-[#8fc8ad]/55 bg-white/55 p-6 backdrop-blur-xl md:grid-cols-4"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={staggerContainer}
+            >
+              {premiumStats.map((stat) => (
+                <motion.div
+                  key={stat.label}
+                  className="rounded-2xl border border-[#9fd0bb]/55 bg-white/60 p-4 text-center"
+                  variants={fadeInUp}
+                >
+                  <p className="text-2xl font-bold text-[#285A48] md:text-3xl">
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-[#091413]/60 md:text-[11px]">
+                    {stat.label}
+                  </p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        <HomeNewsletterSection />
+
+        {/* Trust Badges */}
+        <section className="px-4 pt-20">
+          <div className="container mx-auto rounded-[2.2rem] border border-[#8fc8ad]/55 bg-white/55 px-6 py-12 text-center backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+            >
+              <p className="text-sm font-medium uppercase tracking-widest text-[#091413]/55">
+                Trusted by thousands of happy customers
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-10">
+                {["bKash", "VISA", "MasterCard", "SSL Secure"].map((brand) => (
+                  <div
+                    key={brand}
+                    className="text-2xl font-bold text-[#285A48]/50 transition-colors hover:text-[#285A48]"
+                  >
+                    {brand}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      </main>
     </>
   );
 }

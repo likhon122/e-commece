@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { SlidersHorizontal, Search, RefreshCw } from "lucide-react";
 import ProductCard from "./ProductCard";
-import { Button, ProductGridSkeleton } from "@/components/ui";
+import { Button, PremiumSectionLoading, ProductGridSkeleton } from "@/components/ui";
 import type { IProduct } from "@/types";
 
 interface ProductApiResponse {
@@ -209,7 +209,16 @@ export default function ProductsCatalogClient() {
   };
 
   if (loading) {
-    return <ProductGridSkeleton count={12} />;
+    return (
+      <div className="space-y-6">
+        <PremiumSectionLoading
+          title="Loading product catalog"
+          subtitle="Applying filters, ranking inventory, and preparing premium cards."
+          className="min-h-[220px] flex items-center justify-center"
+        />
+        <ProductGridSkeleton count={12} />
+      </div>
+    );
   }
 
   return (

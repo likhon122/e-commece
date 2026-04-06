@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight, TrendingUp } from "lucide-react";
 import ProductCard from "./ProductCard";
 import { PremiumCardGridLoading } from "@/components/ui";
 import type { IProduct } from "@/types";
@@ -13,17 +13,20 @@ type ProductApiResponse = {
   data: IProduct[];
 };
 
-export default function NewArrivalsProductsSection() {
+export default function MostLovedProductsSection() {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const run = async () => {
       try {
-        const response = await fetch("/api/products?new=true&limit=12", {
-          credentials: "include",
-          cache: "no-store",
-        });
+        const response = await fetch(
+          "/api/products?sortBy=popularity&inStock=true&limit=12",
+          {
+            credentials: "include",
+            cache: "no-store",
+          },
+        );
         const payload = (await response.json()) as ProductApiResponse;
         if (response.ok && payload.success) {
           setProducts(payload.data || []);
@@ -44,44 +47,43 @@ export default function NewArrivalsProductsSection() {
     <section className="px-4 py-10 sm:py-12">
       <div className="container rounded-[2.2rem] border border-[#8fc8ad]/55 bg-white/55 p-6 backdrop-blur-xl sm:p-8">
         <motion.div
-          className="mb-12 flex flex-col items-center justify-between gap-4 sm:flex-row"
-          initial={{ opacity: 0, y: 20 }}
+          className="mb-10 flex flex-col items-center justify-between gap-4 sm:flex-row"
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
           <div className="text-center sm:text-left">
-            <span className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-[#408A71]">
-              <Sparkles className="h-4 w-4" />
-              Just Dropped
+            <span className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-[#408A71]">
+              <TrendingUp className="h-4 w-4" />
+              Most Loved Right Now
             </span>
-            <h2 className="mt-3 text-3xl font-bold text-[#091413] md:text-4xl">
-              New Arrivals
-            </h2>
-            <p className="mt-2 max-w-md text-[#091413]/65">
-              Be the first to discover our latest collection of premium fashion pieces
+            <h3 className="mt-2 text-3xl font-bold text-[#091413] md:text-4xl">Trending Essentials</h3>
+            <p className="mt-2 max-w-2xl text-sm text-[#091413]/65 md:text-base">
+              High-demand pieces chosen by shoppers for style confidence, comfort, and performance.
             </p>
           </div>
+
           <Link
-            href="/products?new=true"
-            className="group inline-flex items-center gap-2 rounded-full border border-[#7dbca2] bg-white px-6 py-3 font-semibold text-[#285A48] transition-all hover:bg-[#285A48] hover:text-white"
+            href="/products?sortBy=popularity"
+            className="group inline-flex items-center gap-2 rounded-full border border-[#7dbca2] bg-white px-5 py-2.5 text-sm font-semibold text-[#285A48] transition-all hover:bg-[#285A48] hover:text-white"
           >
-            View All New Arrivals
+            View Popular Products
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </motion.div>
 
         {loading ? (
-          <PremiumCardGridLoading count={12} className="sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6" />
+          <PremiumCardGridLoading count={12} className="sm:grid-cols-3 xl:grid-cols-6" />
         ) : (
           <motion.div
-            className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 md:gap-6 xl:grid-cols-6"
+            className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6"
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
             variants={{
               animate: {
                 transition: {
-                  staggerChildren: 0.1,
+                  staggerChildren: 0.08,
                 },
               },
             }}
@@ -90,7 +92,7 @@ export default function NewArrivalsProductsSection() {
               <motion.div
                 key={product._id}
                 variants={{
-                  initial: { opacity: 0, y: 20 },
+                  initial: { opacity: 0, y: 14 },
                   animate: { opacity: 1, y: 0 },
                 }}
                 className="rounded-2xl border border-[#a5d5c1]/60 bg-white/58 p-2"

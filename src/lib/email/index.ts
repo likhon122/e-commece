@@ -234,8 +234,9 @@ export async function sendOrderStatusUpdateEmail(
   orderNumber: string,
   status: string,
   trackingNumber?: string,
+  statusNote?: string,
 ): Promise<boolean> {
-  const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/account/orders/${orderNumber}`;
+  const orderUrl = `${resolveAppUrl()}/account/orders`;
 
   const statusMessages: Record<string, string> = {
     confirmed: "Your order has been confirmed and is being prepared.",
@@ -265,6 +266,11 @@ export async function sendOrderStatusUpdateEmail(
           <p style="margin: 0; font-size: 12px; color: #5c4d30; text-transform: uppercase; letter-spacing: 1px;">Status</p>
           <p style="margin: 8px 0 0; font-size: 24px; color: #285A48; text-transform: uppercase; font-weight: 700;">${status}</p>
           <p style="margin: 15px 0 0; color: #3d3320; font-size: 14px;">${statusMessages[status] || "Status updated."}</p>
+          ${
+            statusNote
+              ? `<p style="margin: 12px 0 0; color: #3d3320; font-size: 13px; background: #ffffff; border: 1px solid #B0E4CC; border-radius: 8px; padding: 10px; text-align: left;"><strong>Tracking Note:</strong> ${statusNote}</p>`
+              : ""
+          }
         </div>
 
         <div style="text-align: center; margin: 35px 0;">
@@ -286,6 +292,51 @@ export async function sendOrderStatusUpdateEmail(
   return sendEmail({
     to: email,
     subject: `Order ${status.charAt(0).toUpperCase() + status.slice(1)} - ${orderNumber} - Mythium`,
+    html,
+  });
+}
+
+export async function sendAdminOrderAlertEmail(
+  email: string,
+  adminName: string,
+  orderNumber: string,
+  customerName: string,
+  total: number,
+  paymentMethod: string,
+  paymentStatus: string,
+): Promise<boolean> {
+  const adminUrl = `${resolveAppUrl()}/admin/orders`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #091413; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FDFBF7;">
+      <div style="background: linear-gradient(135deg, #285A48 0%, #408A71 100%); padding: 36px 28px; text-align: center; border-radius: 16px 16px 0 0;">
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 700;">New Order Alert</h1>
+      </div>
+      <div style="background: #ffffff; padding: 30px 28px; border: 1px solid #B0E4CC; border-top: none; border-radius: 0 0 16px 16px; box-shadow: 0 10px 40px rgba(9, 20, 19, 0.1);">
+        <p style="color: #3d3320; font-size: 15px;">Hi ${adminName}, a new order needs your attention.</p>
+        <div style="background: #f7fffa; border: 1px solid #d6efdf; border-radius: 12px; padding: 14px; margin: 18px 0;">
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>Order:</strong> ${orderNumber}</p>
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>Customer:</strong> ${customerName}</p>
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>Total:</strong> ৳${total.toLocaleString()}</p>
+          <p style="margin: 0 0 6px; font-size: 14px;"><strong>Payment:</strong> ${paymentMethod} (${paymentStatus})</p>
+        </div>
+        <div style="text-align: center; margin: 26px 0;">
+          <a href="${adminUrl}" style="background: linear-gradient(135deg, #285A48 0%, #408A71 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: 600; display: inline-block;">Open Admin Orders</a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: `New Order Alert - ${orderNumber} - Mythium Admin`,
     html,
   });
 }

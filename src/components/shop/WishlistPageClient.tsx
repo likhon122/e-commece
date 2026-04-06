@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { Heart, Loader2, ShoppingBag, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { Button } from "@/components/ui";
+import { Button, PremiumSectionLoading } from "@/components/ui";
 import { useCartStore, useWishlistStore } from "@/store";
 import { formatPrice } from "@/lib/utils";
 import type { IProduct } from "@/types";
@@ -24,6 +25,8 @@ interface WishlistPageClientProps {
 export default function WishlistPageClient({ compactHeader = false }: WishlistPageClientProps) {
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
+  const router = useRouter();
+  const pathname = usePathname();
 
   const { items, setItems, removeItem } = useWishlistStore();
   const { addItem, openCart } = useCartStore();
@@ -146,6 +149,13 @@ export default function WishlistPageClient({ compactHeader = false }: WishlistPa
   };
 
   const handleAddToCart = (product: IProduct) => {
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart");
+      const callbackUrl = encodeURIComponent(pathname || "/wishlist");
+      router.push(`/login?callbackUrl=${callbackUrl}`);
+      return;
+    }
+
     const availableVariant = product.variants.find((variant) => variant.stock > 0);
     if (!availableVariant) {
       toast.error("This product is out of stock");
@@ -158,6 +168,13 @@ export default function WishlistPageClient({ compactHeader = false }: WishlistPa
   };
 
   const handleMoveAllToCart = () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart");
+      const callbackUrl = encodeURIComponent(pathname || "/wishlist");
+      router.push(`/login?callbackUrl=${callbackUrl}`);
+      return;
+    }
+
     let addedCount = 0;
 
     for (const product of products) {
@@ -191,10 +208,11 @@ export default function WishlistPageClient({ compactHeader = false }: WishlistPa
       </div>
 
       {loading && (
-        <div className="rounded-xl border border-secondary-200 bg-white p-12 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#285A48]" />
-          <p className="mt-3 text-secondary-600">Loading wishlist...</p>
-        </div>
+        <PremiumSectionLoading
+          title="Loading wishlist"
+          subtitle="Fetching your saved favorites and stock-aware cart actions."
+          className="min-h-[280px] flex items-center justify-center"
+        />
       )}
 
       {isEmpty && (

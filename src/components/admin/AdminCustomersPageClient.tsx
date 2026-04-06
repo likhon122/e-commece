@@ -22,7 +22,16 @@ import {
   X,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input } from "@/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Input,
+  PremiumSectionLoading,
+} from "@/components/ui";
 import { fetchJson, formatCurrency, formatDate } from "./utils";
 
 type UserData = {
@@ -477,15 +486,11 @@ export default function AdminCustomersPageClient() {
 
         {/* Loading */}
         {loading && (
-          <div className="flex min-h-[40vh] items-center justify-center">
-            <div className="text-center">
-              <div className="relative mx-auto h-12 w-12">
-                <div className="absolute inset-0 rounded-full border-4 border-[#B0E4CC]" />
-                <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-[#285A48]" />
-              </div>
-              <p className="mt-4 text-sm font-medium text-secondary-600">Loading customers...</p>
-            </div>
-          </div>
+          <PremiumSectionLoading
+            title="Loading customers"
+            subtitle="Collecting customer tiers, order behavior, and profile metrics."
+            className="min-h-[42vh] flex items-center justify-center"
+          />
         )}
 
         {/* Customer Grid */}

@@ -25,6 +25,7 @@ import {
   CardHeader,
   CardTitle,
   Input,
+  PremiumSectionLoading,
 } from "@/components/ui";
 import { fetchJson } from "./utils";
 
@@ -734,15 +735,11 @@ export default function AdminCategoriesPageClient() {
           </CardHeader>
           <CardContent className="pt-6">
             {loading && (
-              <div className="flex min-h-[30vh] items-center justify-center">
-                <div className="text-center">
-                  <div className="relative mx-auto h-12 w-12">
-                    <div className="absolute inset-0 rounded-full border-4 border-[#B0E4CC]" />
-                    <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-[#285A48]" />
-                  </div>
-                  <p className="mt-4 text-sm font-medium text-secondary-600">Loading category tree...</p>
-                </div>
-              </div>
+              <PremiumSectionLoading
+                title="Loading category tree"
+                subtitle="Building hierarchy, parent links, and taxonomy metadata."
+                className="min-h-[30vh] flex items-center justify-center"
+              />
             )}
             {error && <p className="text-sm text-red-600">{error}</p>}
             {!loading && !error && (

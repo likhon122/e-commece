@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db/connection";
 import { Order, User } from "@/lib/db/models";
 import { executeBkashPayment } from "@/lib/payments/bkash";
-import { sendOrderStatusUpdateEmail } from "@/lib/email";
+import { sendAdminOrderAlertEmail, sendOrderStatusUpdateEmail } from "@/lib/email";
+import { notifyAllAdmins } from "@/lib/notifications";
 import {
   confirmReservedOrderStock,
   releaseReservedOrderStock,
@@ -23,6 +24,50 @@ function isAmountMatch(expected: number, received: string): boolean {
   }
 
   return Math.abs(expected - parsed) < 0.01;
+}
+
+async function notifyAdminsPaidOrder(
+  order: {
+    _id: unknown;
+    orderNumber: string;
+    total: number;
+    paymentMethod: string;
+    paymentStatus: string;
+  },
+  customerName: string,
+) {
+  try {
+    const adminRecipients = await notifyAllAdmins({
+      type: "payment-update",
+      title: `Payment confirmed for ${order.orderNumber}`,
+      message: `${customerName} completed payment. Total ৳${Number(
+        order.total || 0,
+      ).toLocaleString()}.`,
+      orderId: order._id as any,
+      orderNumber: order.orderNumber,
+      metadata: {
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+      },
+    });
+
+    const offlineAdmins = adminRecipients.filter((admin) => !admin.online);
+    await Promise.all(
+      offlineAdmins.map((admin) =>
+        sendAdminOrderAlertEmail(
+          admin.email,
+          "Admin",
+          order.orderNumber,
+          customerName,
+          Number(order.total || 0),
+          order.paymentMethod,
+          order.paymentStatus,
+        ),
+      ),
+    );
+  } catch (notifyError) {
+    console.error("bKash admin payment notification error:", notifyError);
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -168,6 +213,13 @@ export async function GET(request: NextRequest) {
         user.name,
         order.orderNumber,
         "confirmed",
+      );
+
+      await notifyAdminsPaidOrder(order, user.name);
+    } else {
+      await notifyAdminsPaidOrder(
+        order,
+        order.shippingAddress?.name || "Customer",
       );
     }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, PremiumSectionLoading } from "@/components/ui";
 import { formatPrice } from "@/lib/utils";
 import type { IProduct } from "@/types";
 
@@ -63,7 +63,15 @@ export default function ProductDetailClient({ slug }: { slug: string }) {
   }, [slug]);
 
   if (loading) {
-    return <div className="container py-14 text-sm text-secondary-600">Loading product...</div>;
+    return (
+      <div className="container py-8">
+        <PremiumSectionLoading
+          title="Loading product details"
+          subtitle="Rendering media gallery, price intelligence, and variant data."
+          className="min-h-[58vh] flex items-center justify-center"
+        />
+      </div>
+    );
   }
 
   if (error || !product) {

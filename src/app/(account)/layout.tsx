@@ -11,9 +11,9 @@ import {
   MapPin,
   LogOut,
   ChevronRight,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PremiumSectionLoading } from "@/components/ui";
 import toast from "react-hot-toast";
 
 const navigation = [
@@ -49,8 +49,12 @@ export default function AccountLayout({
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-brand-sage" />
+      <div className="container py-8">
+        <PremiumSectionLoading
+          title="Loading your account hub"
+          subtitle="Authenticating your session and preparing personalized sections."
+          className="min-h-[56vh] flex items-center justify-center"
+        />
       </div>
     );
   }
