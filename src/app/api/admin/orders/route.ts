@@ -172,8 +172,20 @@ export async function PATCH(request: NextRequest) {
     const previousStatus = String(order.status) as TrackableOrderStatus;
     const previousTrackingNumber = String(order.trackingNumber || "");
 
-    const normalizedStatus =
-      typeof status === "string" ? status.trim().toLowerCase() : "";
+    let normalizedStatus: TrackableOrderStatus | null = null;
+    if (typeof status === "string" && status.trim().length > 0) {
+      const candidateStatus = status.trim().toLowerCase();
+
+      if (!validStatuses.includes(candidateStatus as TrackableOrderStatus)) {
+        return NextResponse.json(
+          { error: "Invalid order status" },
+          { status: 400 },
+        );
+      }
+
+      normalizedStatus = candidateStatus as TrackableOrderStatus;
+    }
+
     const normalizedTrackingNumber =
       typeof trackingNumber === "string" ? trackingNumber.trim() : undefined;
     const normalizedNotes = typeof notes === "string" ? notes.trim() : undefined;
@@ -189,13 +201,6 @@ export async function PATCH(request: NextRequest) {
           error:
             "Tracking number must be 6-40 characters and contain only letters, numbers, and hyphens.",
         },
-        { status: 400 },
-      );
-    }
-
-    if (normalizedStatus && !validStatuses.includes(normalizedStatus as TrackableOrderStatus)) {
-      return NextResponse.json(
-        { error: "Invalid order status" },
         { status: 400 },
       );
     }
@@ -271,7 +276,7 @@ export async function PATCH(request: NextRequest) {
     await order.save();
     await order.populate("user", "name email avatar");
 
-    const statusChanged = normalizedStatus && normalizedStatus !== previousStatus;
+    const statusChanged = Boolean(normalizedStatus && normalizedStatus !== previousStatus);
     const trackingChanged =
       trackingNumber !== undefined &&
       String(order.trackingNumber || "") !== previousTrackingNumber;
@@ -295,10 +300,15 @@ export async function PATCH(request: NextRequest) {
       });
 
       if (!userNotice.online && userNotice.email) {
+        const userName =
+          (order.user as { name?: string } | undefined)?.name ||
+          order.shippingAddress?.name ||
+          "Customer";
+
         try {
           await sendOrderStatusUpdateEmail(
             userNotice.email,
-            order.user?.name || order.shippingAddress?.name || "Customer",
+            userName,
             order.orderNumber,
             order.status,
             order.trackingNumber,
