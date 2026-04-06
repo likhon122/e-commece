@@ -3,6 +3,7 @@ import connectDB from "@/lib/db/connection";
 import { CheckoutSession, Order } from "@/lib/db/models";
 import { getCallbackBaseUrl } from "@/lib/payments/base-url";
 import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
+import { readPaymentCallbackPayload } from "@/lib/payments/callback-payload";
 import { releaseReservedOrderStock } from "@/lib/orders/inventory";
 import {
   checkRateLimit,
@@ -18,12 +19,9 @@ async function handleFail(request: NextRequest) {
     return rateLimitExceededResponse(rateLimit.retryAfterSec);
   }
 
-  const data =
-    request.method === "GET"
-      ? Object.fromEntries(request.nextUrl.searchParams.entries())
-      : Object.fromEntries((await request.formData()).entries());
+  const data = await readPaymentCallbackPayload(request);
   const payload = data as Record<string, unknown>;
-  const tran_id = data.tran_id as string;
+  const tran_id = String(data.tran_id || "");
 
   const baseUrl = getCallbackBaseUrl(request);
 

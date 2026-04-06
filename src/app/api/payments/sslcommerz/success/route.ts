@@ -5,6 +5,7 @@ import { validateSSLCommerzPayment } from "@/lib/payments/sslcommerz";
 import { sendOrderStatusUpdateEmail } from "@/lib/email";
 import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
 import { getCallbackBaseUrl } from "@/lib/payments/base-url";
+import { readPaymentCallbackPayload } from "@/lib/payments/callback-payload";
 import {
   confirmReservedOrderStock,
   releaseReservedOrderStock,
@@ -27,12 +28,7 @@ function isAmountMatch(expected: number, received: string): boolean {
 }
 
 async function getPayload(request: NextRequest): Promise<Record<string, unknown>> {
-  if (request.method === "GET") {
-    return Object.fromEntries(request.nextUrl.searchParams.entries());
-  }
-
-  const formData = await request.formData();
-  return Object.fromEntries(formData.entries());
+  return readPaymentCallbackPayload(request);
 }
 
 async function handleSuccess(request: NextRequest): Promise<NextResponse> {

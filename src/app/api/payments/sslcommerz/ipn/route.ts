@@ -3,6 +3,7 @@ import connectDB from "@/lib/db/connection";
 import { Cart, CheckoutSession, Order } from "@/lib/db/models";
 import { validateSSLCommerzPayment } from "@/lib/payments/sslcommerz";
 import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
+import { readPaymentCallbackPayload } from "@/lib/payments/callback-payload";
 import {
   confirmReservedOrderStock,
   releaseReservedOrderStock,
@@ -24,12 +25,7 @@ function isAmountMatch(expected: number, received: string): boolean {
 }
 
 async function getPayload(request: NextRequest): Promise<Record<string, unknown>> {
-  if (request.method === "GET") {
-    return Object.fromEntries(request.nextUrl.searchParams.entries());
-  }
-
-  const formData = await request.formData();
-  return Object.fromEntries(formData.entries());
+  return readPaymentCallbackPayload(request);
 }
 
 async function handleIpn(request: NextRequest) {
