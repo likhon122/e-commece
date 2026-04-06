@@ -484,7 +484,7 @@ export default function HomePage() {
         </section>
 
         {/* Metrics Section */}
-        <section className="px-4 pt-8 sm:pt-10">
+        <section className="px-4 pt-8 sm:pt-10 mb-10">
           <div className="container mx-auto">
             <motion.div
               className="grid grid-cols-2 gap-4 rounded-[2.2rem] border border-[#8fc8ad]/55 bg-white/55 p-6 backdrop-blur-xl md:grid-cols-4"

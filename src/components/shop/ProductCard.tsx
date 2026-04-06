@@ -90,145 +90,143 @@ export default function ProductCard({ product, className }: ProductCardProps) {
   };
 
   const isOutOfStock = product.variants.every((v) => v.stock === 0);
+  const colorSwatches = Array.from(
+    new Set(product.variants.map((variant) => variant.colorCode).filter(Boolean)),
+  );
 
   return (
-    <div className={cn("group relative", className)}>
+    <div className={cn("group relative h-full", className)}>
       <Link href={`/products/${product.slug}`}>
-        {/* Image Container */}
-        <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-secondary-100">
-          {primaryImage ? (
-            <>
-              <Image
-                src={primaryImage}
-                alt={product.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              />
-              {productVideoUrl && (
-                <video
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                >
-                  <source src={productVideoUrl} />
-                </video>
-              )}
-            </>
-          ) : (
-            <div className="flex h-full items-center justify-center text-secondary-400">
-              <ShoppingBag className="h-12 w-12" />
-            </div>
-          )}
+        <article className="relative h-full overflow-hidden rounded-[1.45rem] border border-[#B0E4CC]/55 bg-[linear-gradient(165deg,#ffffff_0%,#fafffc_48%,#f4fbf8_100%)] p-3 shadow-[0_14px_34px_-28px_rgba(24,50,39,0.6)] transition-all duration-500 hover:-translate-y-1.5 hover:border-[#75b597]/75 hover:shadow-[0_26px_44px_-24px_rgba(24,50,39,0.58)]">
+          <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-[#B0E4CC]/35 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
 
-          {/* Badges */}
-          <div className="absolute left-3 top-3 flex flex-col gap-2">
-            {discount > 0 && <Badge variant="danger">-{discount}%</Badge>}
-            {product.isNew && <Badge variant="default">New</Badge>}
-            {isOutOfStock && <Badge variant="secondary">Out of Stock</Badge>}
-          </div>
-
-          {/* Wishlist Button */}
-          <button
-            onClick={handleToggleWishlist}
-            className={cn(
-              "absolute right-3 top-3 rounded-full bg-white p-2 shadow-md transition-all",
-              inWishlist
-                ? "text-red-500"
-                : "text-secondary-400 hover:text-red-500",
-            )}
-          >
-            <Heart className={cn("h-5 w-5", inWishlist && "fill-red-500")} />
-          </button>
-
-          {/* Quick Add Button */}
-          {!isOutOfStock && (
-            <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
-              <button
-                onClick={handleAddToCart}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-white py-3 text-sm font-medium text-secondary-900 shadow-lg transition-colors hover:bg-primary-600 hover:text-white"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Add to Cart
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Product Info */}
-        <div className="mt-4">
-          {/* Category */}
-          {typeof product.category === "object" && product.category.name && (
-            <p className="text-xs font-medium uppercase tracking-wide text-secondary-500">
-              {product.category.name}
-            </p>
-          )}
-
-          {/* Name */}
-          <h3 className="mt-1 text-sm font-medium text-secondary-900 line-clamp-2 group-hover:text-primary-600">
-            {product.name}
-          </h3>
-
-          {/* Rating */}
-          {product.ratings.count > 0 && (
-            <div className="mt-2 flex items-center gap-1">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium text-secondary-700">
-                {product.ratings.average.toFixed(1)}
-              </span>
-              <span className="text-sm text-secondary-500">
-                ({product.ratings.count})
-              </span>
-            </div>
-          )}
-
-          {/* Price */}
-          <div className="mt-2 flex items-center gap-2">
-            {product.salePrice ? (
+          <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-[#B0E4CC]/40 bg-secondary-100">
+            {primaryImage ? (
               <>
-                <span className="text-lg font-semibold text-primary-600">
-                  {formatPrice(product.salePrice)}
-                </span>
-                <span className="text-sm text-secondary-400 line-through">
-                  {formatPrice(product.basePrice)}
-                </span>
+                <Image
+                  src={primaryImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                />
+                {productVideoUrl && (
+                  <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  >
+                    <source src={productVideoUrl} />
+                  </video>
+                )}
               </>
             ) : (
-              <span className="text-lg font-semibold text-secondary-900">
-                {formatPrice(product.basePrice)}
-              </span>
+              <div className="flex h-full items-center justify-center text-secondary-400">
+                <ShoppingBag className="h-12 w-12" />
+              </div>
             )}
+
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#091413]/35 via-transparent to-transparent" />
+            <div className="pointer-events-none absolute -inset-x-1/2 top-0 h-full w-1/2 -translate-x-[150%] bg-gradient-to-r from-transparent via-white/45 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-[260%] group-hover:opacity-100" />
+
+            <div className="absolute left-3 top-3 flex flex-col gap-2">
+              {discount > 0 && <Badge variant="danger">-{discount}%</Badge>}
+              {product.isNew && <Badge variant="default">New</Badge>}
+              {isOutOfStock && <Badge variant="secondary">Out of Stock</Badge>}
+            </div>
+
+            <button
+              onClick={handleToggleWishlist}
+              className={cn(
+                "absolute right-3 top-3 rounded-full border border-[#B0E4CC]/40 bg-white/95 p-2 text-[#285A48] shadow-md backdrop-blur transition-all hover:scale-105",
+                inWishlist ? "text-red-500 border-red-200/80" : "hover:text-red-500",
+              )}
+            >
+              <Heart className={cn("h-5 w-5", inWishlist && "fill-red-500")} />
+            </button>
+
+            {!isOutOfStock ? (
+              <div className="absolute inset-x-3 bottom-3 translate-y-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                <button
+                  onClick={handleAddToCart}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#A7D8C4]/70 bg-white/95 py-2.5 text-sm font-semibold text-[#285A48] shadow-lg transition-all hover:bg-[#285A48] hover:text-white"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  Add to Cart
+                </button>
+              </div>
+            ) : null}
           </div>
 
-          {/* Color Options */}
-          {product.variants.length > 1 && (
-            <div className="mt-3 flex gap-1">
-              {Array.from(new Set(product.variants.map((v) => v.colorCode)))
-                .slice(0, 4)
-                .map((color) => (
-                  <div
-                    key={color}
-                    className="h-4 w-4 rounded-full border border-secondary-200"
-                    style={{ backgroundColor: color }}
-                    title={
-                      product.variants.find((v) => v.colorCode === color)?.color
-                    }
-                  />
-                ))}
-              {Array.from(new Set(product.variants.map((v) => v.colorCode)))
-                .length > 4 && (
-                <span className="text-xs text-secondary-500">
-                  +
-                  {Array.from(new Set(product.variants.map((v) => v.colorCode)))
-                    .length - 4}
+          <div className="mt-3.5 space-y-2.5">
+            {typeof product.category === "object" && product.category.name ? (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#285A48]/70">
+                {product.category.name}
+              </p>
+            ) : null}
+
+            <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug text-[#091413] transition-colors group-hover:text-[#285A48]">
+              {product.name}
+            </h3>
+
+            {product.ratings.count > 0 ? (
+              <div className="flex items-center gap-1.5 text-sm">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold text-[#091413]/80">
+                  {product.ratings.average.toFixed(1)}
+                </span>
+                <span className="text-[#091413]/50">({product.ratings.count})</span>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-center gap-2">
+              {product.salePrice ? (
+                <>
+                  <span className="text-lg font-bold text-[#285A48]">
+                    {formatPrice(product.salePrice)}
+                  </span>
+                  <span className="text-sm text-secondary-400 line-through">
+                    {formatPrice(product.basePrice)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-lg font-bold text-[#091413]">
+                  {formatPrice(product.basePrice)}
                 </span>
               )}
             </div>
-          )}
-        </div>
+
+            {product.variants.length > 1 ? (
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <div className="flex items-center gap-1.5">
+                  {colorSwatches.slice(0, 4).map((color) => (
+                    <div
+                      key={color}
+                      className="h-4 w-4 rounded-full border border-[#B0E4CC]/80"
+                      style={{ backgroundColor: color }}
+                      title={
+                        product.variants.find((variant) => variant.colorCode === color)
+                          ?.color
+                      }
+                    />
+                  ))}
+                  {colorSwatches.length > 4 ? (
+                    <span className="text-xs font-medium text-[#091413]/55">
+                      +{colorSwatches.length - 4}
+                    </span>
+                  ) : null}
+                </div>
+
+                <span className="rounded-full bg-[#B0E4CC]/22 px-2 py-0.5 text-[11px] font-medium text-[#285A48]">
+                  {isOutOfStock ? "Sold Out" : "In Stock"}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </article>
       </Link>
     </div>
   );

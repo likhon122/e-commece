@@ -14,7 +14,7 @@ const accessTokenSecret = new TextEncoder().encode(
 const protectedPagePrefixes = ["/account", "/checkout"];
 const adminPagePrefixes = ["/admin"];
 
-const protectedApiPrefixes = ["/api/cart", "/api/orders", "/api/notifications"];
+const protectedApiPrefixes = ["/api/cart", "/api/orders", "/api/notifications", "/api/account"];
 const adminApiPrefixes = ["/api/admin"];
 
 function pathMatches(pathname: string, prefixes: string[]): boolean {
@@ -112,6 +112,7 @@ export const config = {
     "/api/cart/:path*",
     "/api/orders/:path*",
     "/api/notifications/:path*",
+    "/api/account/:path*",
     "/api/admin/:path*",
   ],
 };

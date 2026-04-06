@@ -16,7 +16,7 @@ export default function HomeNewsletterSection() {
   };
 
   return (
-    <section className="px-4 -mt-16">
+    <section className="px-4 ">
       <div className="container relative">
         <div className="mx-auto max-w-6xl rounded-[2.2rem] border border-[#8fc8ad]/55 bg-white/55 p-8 text-center sm:p-10 md:p-12">
           <span className="inline-flex items-center gap-2 rounded-full border border-[#9fd0bb]/70 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#285A48]">
