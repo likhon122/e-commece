@@ -7,10 +7,10 @@ import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
 import { getCallbackBaseUrl } from "@/lib/payments/base-url";
 import { readPaymentCallbackPayload } from "@/lib/payments/callback-payload";
 import {
+  buildOrderItemsFromCheckoutSession,
   confirmReservedOrderStock,
   releaseReservedOrderStock,
   reserveOrderStock,
-  validateAndBuildOrderItemsFromCart,
 } from "@/lib/orders/inventory";
 import { checkRateLimit, rateLimitExceededResponse } from "@/lib/security/rate-limit";
 
@@ -120,10 +120,24 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    await confirmReservedOrderStock(order._id.toString());
+    let stockConfirmed = true;
+    try {
+      await confirmReservedOrderStock(order._id.toString());
+    } catch (stockError) {
+      stockConfirmed = false;
+      console.error("SSLCommerz legacy stock confirmation error:", stockError);
+      try {
+        await releaseReservedOrderStock(order._id.toString());
+      } catch (releaseError) {
+        console.error("SSLCommerz legacy stock release error:", releaseError);
+      }
+    }
 
     order.paymentStatus = "paid";
-    order.status = "confirmed";
+    order.status = stockConfirmed ? "confirmed" : "pending";
+    if (!stockConfirmed) {
+      order.stockReservationStatus = "released";
+    }
     order.paymentDetails = {
       transactionId: validation.tran_id,
       bankTransactionId: validation.bank_tran_id,
@@ -132,8 +146,10 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
       validationId: val_id,
     };
     order.statusHistory.push({
-      status: "confirmed",
-      note: "Payment received via SSLCommerz",
+      status: stockConfirmed ? "confirmed" : "pending",
+      note: stockConfirmed
+        ? "Payment received via SSLCommerz"
+        : "Payment received via SSLCommerz; stock confirmation failed and requires manual review",
       updatedAt: new Date(),
     });
     await order.save();
@@ -145,7 +161,7 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
           legacyUser.email,
           legacyUser.name,
           order.orderNumber,
-          "confirmed",
+          stockConfirmed ? "confirmed" : "pending",
         );
       }
     } catch (emailError) {
@@ -154,7 +170,12 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.redirect(
-      new URL(`/account/orders?paid=${order.orderNumber}`, baseUrl),
+      new URL(
+        stockConfirmed
+          ? `/account/orders?paid=${order.orderNumber}`
+          : `/account/orders?paid=${order.orderNumber}&stock=review`,
+        baseUrl,
+      ),
     );
   }
 
@@ -176,8 +197,9 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { orderItems, subtotal } = await validateAndBuildOrderItemsFromCart(
+  const { orderItems, subtotal } = await buildOrderItemsFromCheckoutSession(
     checkoutSession.items,
+    checkoutSession.subtotal,
   );
 
   const order = await Order.create({
@@ -198,23 +220,25 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
     statusHistory: [{ status: "pending", updatedAt: new Date() }],
   });
 
+  let stockConfirmed = true;
   try {
     await reserveOrderStock(order._id.toString());
     await confirmReservedOrderStock(order._id.toString());
   } catch (stockError) {
-    await Order.findByIdAndDelete(order._id);
-    checkoutSession.status = "failed";
-    checkoutSession.validationId = val_id;
-    await checkoutSession.save();
-
+    stockConfirmed = false;
     console.error("SSLCommerz success stock confirmation error:", stockError);
-    return NextResponse.redirect(
-      new URL(`/account/orders?payment=stock-unavailable`, baseUrl),
-    );
+    try {
+      await releaseReservedOrderStock(order._id.toString());
+    } catch (releaseError) {
+      console.error("SSLCommerz success stock release error:", releaseError);
+    }
   }
 
   order.paymentStatus = "paid";
-  order.status = "confirmed";
+  order.status = stockConfirmed ? "confirmed" : "pending";
+  if (!stockConfirmed) {
+    order.stockReservationStatus = "released";
+  }
   order.paymentDetails = {
     transactionId: validation.tran_id,
     bankTransactionId: validation.bank_tran_id,
@@ -223,8 +247,10 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
     validationId: val_id,
   };
   order.statusHistory.push({
-    status: "confirmed",
-    note: "Payment received via SSLCommerz",
+    status: stockConfirmed ? "confirmed" : "pending",
+    note: stockConfirmed
+      ? "Payment received via SSLCommerz"
+      : "Payment received via SSLCommerz; stock confirmation failed and requires manual review",
     updatedAt: new Date(),
   });
   await order.save();
@@ -251,7 +277,7 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
         user.email,
         user.name,
         order.orderNumber,
-        "confirmed",
+        stockConfirmed ? "confirmed" : "pending",
       );
     }
   } catch (emailError) {
@@ -260,7 +286,12 @@ async function handleSuccess(request: NextRequest): Promise<NextResponse> {
   }
 
   return NextResponse.redirect(
-    new URL(`/account/orders?paid=${order.orderNumber}`, baseUrl),
+    new URL(
+      stockConfirmed
+        ? `/account/orders?paid=${order.orderNumber}`
+        : `/account/orders?paid=${order.orderNumber}&stock=review`,
+      baseUrl,
+    ),
   );
 }
 

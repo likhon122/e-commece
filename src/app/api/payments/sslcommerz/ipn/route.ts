@@ -5,10 +5,10 @@ import { validateSSLCommerzPayment } from "@/lib/payments/sslcommerz";
 import { verifySSLCommerzCallbackSignature } from "@/lib/payments/signature";
 import { readPaymentCallbackPayload } from "@/lib/payments/callback-payload";
 import {
+  buildOrderItemsFromCheckoutSession,
   confirmReservedOrderStock,
   releaseReservedOrderStock,
   reserveOrderStock,
-  validateAndBuildOrderItemsFromCart,
 } from "@/lib/orders/inventory";
 import {
   checkRateLimit,
@@ -100,8 +100,9 @@ async function handleIpn(request: NextRequest) {
         );
       }
 
-      const { orderItems, subtotal } = await validateAndBuildOrderItemsFromCart(
+      const { orderItems, subtotal } = await buildOrderItemsFromCheckoutSession(
         checkoutSession.items,
+        checkoutSession.subtotal,
       );
 
       const order = await Order.create({
@@ -123,23 +124,25 @@ async function handleIpn(request: NextRequest) {
         statusHistory: [{ status: "pending", updatedAt: new Date() }],
       });
 
+      let stockConfirmed = true;
       try {
         await reserveOrderStock(order._id.toString());
         await confirmReservedOrderStock(order._id.toString());
       } catch (stockError) {
-        await Order.findByIdAndDelete(order._id);
-        checkoutSession.status = "failed";
-        checkoutSession.validationId = val_id;
-        await checkoutSession.save();
+        stockConfirmed = false;
         console.error("SSLCommerz IPN stock confirmation error:", stockError);
-        return NextResponse.json(
-          { success: false, error: "Stock unavailable" },
-          { status: 409 },
-        );
+        try {
+          await releaseReservedOrderStock(order._id.toString());
+        } catch (releaseError) {
+          console.error("SSLCommerz IPN stock release error:", releaseError);
+        }
       }
 
       order.paymentStatus = "paid";
-      order.status = "confirmed";
+      order.status = stockConfirmed ? "confirmed" : "pending";
+      if (!stockConfirmed) {
+        order.stockReservationStatus = "released";
+      }
       order.paymentDetails = {
         transactionId: validation.tran_id,
         bankTransactionId: validation.bank_tran_id,
@@ -148,8 +151,10 @@ async function handleIpn(request: NextRequest) {
         validationId: val_id,
       };
       order.statusHistory.push({
-        status: "confirmed",
-        note: "Payment received via SSLCommerz IPN",
+        status: stockConfirmed ? "confirmed" : "pending",
+        note: stockConfirmed
+          ? "Payment received via SSLCommerz IPN"
+          : "Payment received via SSLCommerz IPN; stock confirmation failed and requires manual review",
         updatedAt: new Date(),
       });
       await order.save();
@@ -166,7 +171,12 @@ async function handleIpn(request: NextRequest) {
         });
       }
 
-      return NextResponse.json({ success: true, message: "Payment recorded" });
+      return NextResponse.json({
+        success: true,
+        message: stockConfirmed
+          ? "Payment recorded"
+          : "Payment recorded with stock review required",
+      });
     }
 
     const order = await Order.findOne({
@@ -206,10 +216,24 @@ async function handleIpn(request: NextRequest) {
       );
     }
 
-    await confirmReservedOrderStock(order._id.toString());
+    let stockConfirmed = true;
+    try {
+      await confirmReservedOrderStock(order._id.toString());
+    } catch (stockError) {
+      stockConfirmed = false;
+      console.error("SSLCommerz IPN legacy stock confirmation error:", stockError);
+      try {
+        await releaseReservedOrderStock(order._id.toString());
+      } catch (releaseError) {
+        console.error("SSLCommerz IPN legacy stock release error:", releaseError);
+      }
+    }
 
     order.paymentStatus = "paid";
-    order.status = "confirmed";
+    order.status = stockConfirmed ? "confirmed" : "pending";
+    if (!stockConfirmed) {
+      order.stockReservationStatus = "released";
+    }
     order.paymentDetails = {
       transactionId: validation.tran_id,
       bankTransactionId: validation.bank_tran_id,
@@ -218,13 +242,20 @@ async function handleIpn(request: NextRequest) {
       validationId: val_id,
     };
     order.statusHistory.push({
-      status: "confirmed",
-      note: "Payment received via SSLCommerz IPN",
+      status: stockConfirmed ? "confirmed" : "pending",
+      note: stockConfirmed
+        ? "Payment received via SSLCommerz IPN"
+        : "Payment received via SSLCommerz IPN; stock confirmation failed and requires manual review",
       updatedAt: new Date(),
     });
     await order.save();
 
-    return NextResponse.json({ success: true, message: "Payment recorded" });
+    return NextResponse.json({
+      success: true,
+      message: stockConfirmed
+        ? "Payment recorded"
+        : "Payment recorded with stock review required",
+    });
   } catch (error) {
     console.error("SSLCommerz IPN error:", error);
     return NextResponse.json(

@@ -299,3 +299,79 @@ export async function validateAndBuildOrderItemsFromCart(
 
   return { orderItems, subtotal };
 }
+
+function roundCurrency(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+export async function buildOrderItemsFromCheckoutSession(
+  checkoutItems: Array<{
+    product: any;
+    variant: { sku: string; size: string; color: string; colorCode: string };
+    quantity: number;
+  }>,
+  fallbackSubtotal: number,
+): Promise<{
+  orderItems: IOrderDoc["items"];
+  subtotal: number;
+}> {
+  const orderItems = [] as unknown as IOrderDoc["items"];
+
+  const totalQuantity = checkoutItems.reduce(
+    (sum, item) => sum + Math.max(1, item.quantity || 1),
+    0,
+  );
+  const averageUnitPrice =
+    totalQuantity > 0 ? roundCurrency(fallbackSubtotal / totalQuantity) : 0;
+
+  let computedSubtotal = 0;
+
+  for (const checkoutItem of checkoutItems) {
+    const productId = checkoutItem.product?._id || checkoutItem.product;
+    const product = await Product.findById(productId);
+
+    let productName = "Product unavailable";
+    let productImage = "";
+    let unitPrice = averageUnitPrice;
+
+    if (product) {
+      productName = product.name;
+      productImage = product.images[0]?.url || "";
+
+      const variant = product.variants.find((v) => v.sku === checkoutItem.variant.sku);
+      if (variant) {
+        unitPrice = variant.price || product.salePrice || product.basePrice;
+      } else {
+        unitPrice = product.salePrice || product.basePrice || averageUnitPrice;
+      }
+    }
+
+    const itemTotal = roundCurrency(unitPrice * checkoutItem.quantity);
+    computedSubtotal = roundCurrency(computedSubtotal + itemTotal);
+
+    (orderItems as any).push({
+      product: productId,
+      productName,
+      productImage,
+      variant: checkoutItem.variant,
+      quantity: checkoutItem.quantity,
+      price: unitPrice,
+      total: itemTotal,
+    });
+  }
+
+  const roundedFallbackSubtotal = roundCurrency(fallbackSubtotal);
+  const adjustment = roundCurrency(roundedFallbackSubtotal - computedSubtotal);
+
+  if ((orderItems as any).length > 0 && Math.abs(adjustment) >= 0.01) {
+    const firstItem = (orderItems as any)[0];
+    firstItem.total = roundCurrency(firstItem.total + adjustment);
+    firstItem.price = roundCurrency(firstItem.total / Math.max(1, firstItem.quantity));
+    computedSubtotal = roundCurrency(computedSubtotal + adjustment);
+  }
+
+  return {
+    orderItems,
+    subtotal: roundedFallbackSubtotal || computedSubtotal,
+  };
+}
